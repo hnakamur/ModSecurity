@@ -1,0 +1,5 @@
+modsecurity (3.0.12-1hn1DebRelDistrib) UNRELEASED; urgency=medium
+
+  * Initial release.
+
+ -- Hiroaki Nakamura <hnakamur@gmail.com>  Sun, 11 Feb 2024 20:46:34 +0900
