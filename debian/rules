@@ -8,8 +8,8 @@ CONFIGURE_EXTRA_FLAGS += --bindir=\$${prefix}/lib/$(DEB_HOST_MULTIARCH)/libexec 
 export DH_VERBOSE = 1
 
 export DEB_BUILD_MAINT_OPTIONS = hardening=-all optimize=-lto
-export CXX=clang++-16
-export CC=clang-16
+export CXX=clang++
+export CC=clang
 
 %:
 	dh $@
