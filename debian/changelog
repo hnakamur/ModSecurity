@@ -1,3 +1,9 @@
+modsecurity (3.0.12-2hn1DebRelDistrib) UNRELEASED; urgency=medium
+
+  * Just update version to be greater than version in standard repository
+
+ -- Hiroaki Nakamura <hnakamur@gmail.com>  Thu, 15 Aug 2024 13:27:12 +0900
+
 modsecurity (3.0.12-1hn1DebRelDistrib) UNRELEASED; urgency=medium
 
   * Initial release.
