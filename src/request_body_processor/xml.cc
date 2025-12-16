@@ -25,8 +25,8 @@ namespace RequestBodyProcessor {
 
 #ifdef WITH_LIBXML2
 
-XML::XML(Transaction *transaction)
-    : m_transaction(transaction) {
+XML::XML(Transaction *transaction, bool require_well_formed)
+    : m_transaction(transaction), m_require_well_formed(require_well_formed) {
     m_data.doc = NULL;
     m_data.parsing_ctx = NULL;
     m_data.sax_handler = NULL;
@@ -107,7 +107,7 @@ bool XML::processChunk(const char *buf, unsigned int size,
 
     /* Not a first invocation. */
     xmlParseChunk(m_data.parsing_ctx, buf, size, 0);
-    if (m_data.parsing_ctx->wellFormed != 1) {
+    if (m_require_well_formed && m_data.parsing_ctx->wellFormed != 1) {
         error->assign("XML: Failed to create parsing context.");
         ms_dbg_a(m_transaction, 4, "XML: Failed parsing document.");
         return false;
@@ -133,7 +133,7 @@ bool XML::complete(std::string *error) {
         ms_dbg_a(m_transaction, 4, "XML: Parsing complete (well_formed " \
             + std::to_string(m_data.well_formed) + ").");
 
-        if (m_data.well_formed != 1) {
+        if (m_require_well_formed && m_data.well_formed != 1) {
             error->assign("XML: Failed parsing document.");
             ms_dbg_a(m_transaction, 4, "XML: Failed parsing document.");
             return false;

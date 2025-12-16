@@ -45,7 +45,7 @@ typedef struct xml_data xml_data;
 
 class XML {
  public:
-    explicit XML(Transaction *transaction);
+    explicit XML(Transaction *transaction, bool require_well_formed = true);
     ~XML();
     bool init();
     bool processChunk(const char *buf, unsigned int size, std::string *err);
@@ -62,6 +62,7 @@ class XML {
  private:
     Transaction *m_transaction;
     std::string m_header;
+    bool m_require_well_formed;
 };
 
 #endif
