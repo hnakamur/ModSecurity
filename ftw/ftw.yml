@@ -1,0 +1,8 @@
+---
+logfile: '/var/log/apache2/modsec_audit.log'
+maxmarkerretries: 10
+testoverride:
+  input:
+    dest_addr: crs-apache
+    port: 8080
+  ignore:
