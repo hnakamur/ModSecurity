@@ -1,0 +1,65 @@
+# This docker-compose file runs tests using
+# ftw, owasp/modsecurity-crs, and albedo.
+services:
+  backend:
+    image: ghcr.io/coreruleset/albedo:0.2.0
+    command: ["--port", "8081"]
+    ports:
+      - 8081:8081
+
+  crs-nginx:
+    depends_on:
+      - backend
+    image: owasp/modsecurity-crs:nginx
+    ports:
+      - "8080:8080"
+    environment:
+      SERVERNAME: localhost
+      BACKEND: http://backend:8081
+      ACCESSLOG: /var/log/modsecurity/audit/access.log
+      ERRORLOG: /var/log/modsecurity/audit/error.log
+      LOGLEVEL: debug
+      MODSEC_DEBUG_LOGLEVEL: 0
+      MODSEC_DEBUG_LOG: /var/log/modsecurity/audit/debug.log
+      MODSEC_AUDIT_LOG: /var/log/modsecurity/audit/audit.log
+      MODSEC_AUDIT_STORAGE_DIR: /var/log/modsecurity/audit/
+      MODSEC_AUDIT_LOG_FORMAT: JSON
+      # CRS Variables for testing using ftw
+      MODSEC_RULE_ENGINE: DetectionOnly
+      PARANOIA: 4
+      BLOCKING_PARANOIA: 4
+      ANOMALY_INBOUND: 5
+      ANOMALY_OUTBOUND: 4
+      REPORTING_LEVEL: 4
+      VALIDATE_UTF8_ENCODING: 1
+      MAX_NUM_ARGS: 255
+      ARG_NAME_LENGTH: 100
+      ARG_LENGTH: 400
+      TOTAL_ARG_LENGTH: 64000
+      MAX_FILE_SIZE: 64100
+      COMBINED_FILE_SIZES: 65535
+      CRS_ENABLE_TEST_MARKER: 1
+    volumes:
+      # Volumes for sharing ModSecurity log files to ftw
+      - modsec_log:/var/log/modsecurity/audit:rw
+      # - type: bind
+      #   source: ./my_logs/access.log
+      #   target: /var/log/nginx/access.log
+      # - type: bind
+      #   source: ./my_logs/error.log
+      #   target: /var/log/nginx/error.log
+
+  ftw:
+    depends_on:
+      - crs-nginx
+    build:
+      context: .
+      dockerfile: ./Dockerfile.ftw
+    environment:
+      - FTW_CLOUDMODE
+      - FTW_INCLUDE
+      - FTW_DEBUG
+    volumes:
+      - modsec_log:/var/log/modsecurity/audit:ro
+volumes:
+  modsec_log:
