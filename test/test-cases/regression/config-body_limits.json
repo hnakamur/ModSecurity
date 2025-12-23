@@ -647,7 +647,7 @@
       "SecRule REQBODY_ERROR \"!@eq 0\" \"id:'200001', phase:2,t:none,log,deny,status:400,msg:'Failed to parse request body.',logdata:'%{reqbody_error_msg}',severity:2\"",
       "SecRule ARGS \"bad_value\" \"id:'200002',phase:2,t:none,deny"
     ]
-  },  
+  },
   {
     "enabled":1,
     "version_min":300000,
