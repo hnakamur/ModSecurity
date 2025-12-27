@@ -46,9 +46,10 @@ std::string RegressionTest::print() {
 inline std::string RegressionTest::yajl_array_to_str(const yajl_val &node) {
     std::stringstream i;
     for (int z = 0; z < node->u.array.len; z++) {
+        if (z > 0) i << "\n";
         yajl_val val3 = node->u.array.values[z];
         const char *key = YAJL_GET_STRING(val3);
-        i << key << "\n";
+        i << key;
     }
     return i.str();
 }
