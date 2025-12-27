@@ -1205,9 +1205,9 @@ int Multipart::multipart_complete(std::string *error) {
                 return false;
             }
         } else {
-            ms_dbg_a(m_transaction, 1,
-                "Multipart: No boundaries found in payload.");
             if (!m_allow_partial_body) {
+                ms_dbg_a(m_transaction, 1,
+                    "Multipart: No boundaries found in payload.");
                 error->assign("Multipart: No boundaries found in payload.");
             }
             return false;

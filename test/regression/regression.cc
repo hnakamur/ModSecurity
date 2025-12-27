@@ -27,6 +27,7 @@
 #include <list>
 #include <algorithm>
 #include <cassert>
+#include <optional>
 
 #include "modsecurity/rules_set.h"
 #include "modsecurity/modsecurity.h"
@@ -393,6 +394,103 @@ void perform_unit_test(const ModSecurityTest<RegressionTest> &test,
     }
 }
 
+static bool starts_with(std::string_view v, std::string_view prefix) {
+    return v.substr(0, prefix.size()).compare(prefix) == 0;
+}
+
+static bool equals_ignore_case(std::string_view a, std::string_view b) {
+    if (a.size() != b.size()) {
+        return false;
+    }
+
+    auto it_a = a.begin();
+    auto it_b = b.begin();
+    for (; it_a != a.end(); ++it_a, ++it_b) {
+        if (std::tolower(static_cast<unsigned char>(*it_a)) !=
+            std::tolower(static_cast<unsigned char>(*it_b))) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static std::optional<std::string_view> find_header(
+    const std::vector<std::pair<std::string, std::string>>& headers,
+    std::string_view name) {
+
+    for (const auto &h : headers) {
+        if (equals_ignore_case(h.first, name)) {
+            return h.second;
+        }
+    }
+    return std::nullopt;
+}
+
+bool perform_check_test(const ModSecurityTest<RegressionTest> &test,
+    const std::vector<std::unique_ptr<RegressionTest>> &tests,
+    int *count)
+{
+    for (auto &t : tests) {
+        (*count)++;
+
+        size_t offset = t->filename.find_last_of("/\\");
+        std::string filename("");
+        if (offset != std::string::npos) {
+            filename = std::string(t->filename, offset + 1,
+                t->filename.length() - offset - 1);
+        } else {
+            filename = t->filename;
+        }
+
+        if (!test.m_automake_output) {
+            std::cout << std::setw(3) << std::right <<
+                std::to_string(*count) << " ";
+            std::cout << std::setw(50) << std::left << filename;
+            std::cout << std::setw(70) << std::left << t->name;
+        }
+
+        if (t->enabled == 0) {
+            if (test.m_automake_output) {
+                std::cout << ":test-result: SKIP" << filename \
+                    << ":" << t->name << std::endl;
+            } else {
+                std::cout << KCYN << "disabled" << RESET << std::endl;
+            }
+            continue;
+        }
+
+        std::stringstream e;
+        if (starts_with(t->request_body, "--")) {
+            auto content_type = find_header(t->request_headers, "Content-Type");
+            if (content_type) {
+                std::string_view multipart_prefix = "multipart/form-data; boundary=";
+                if (starts_with(content_type.value(), multipart_prefix)) {
+                    auto boundary = content_type.value().substr(multipart_prefix.size());
+                    auto pos = t->request_body.find('\n');
+                    std::string line = pos != std::string::npos ? t->request_body.substr(2, pos - 2) : t->request_body.substr(2);
+                    if (!line.empty() && line.back() == '\r') line.pop_back();
+                    if (line.compare(boundary) != 0) {
+                        e << "first line of request does not match to \"--\" plus boundary in Content-Type" << std::endl
+                          << "first line.substr(2):[" << line << "]" << std::endl
+                          << "boundary            :[" << boundary << "]" << std::endl;;
+                    }
+                } else {
+                    e << "request body seems multipart but Content-Type is not multipart" << std::endl;
+                }
+            } else {
+                e << "request body seems multipart but no Content-Type set." << std::endl;
+            }
+        }
+        if (auto err = e.str(); !err.empty()) {
+            std::cout << KRED << "bad!" << RESET << std::endl << err << std::endl;
+            continue;
+        }
+
+        std::cout << KGRN << "good!" << RESET << std::endl;
+    }
+    return false;
+}
+
 int main(int argc, char **argv)
 {
     ModSecurityTest<RegressionTest> test;
@@ -467,6 +565,19 @@ int main(int argc, char **argv)
     if (test.m_count_all) {
         std::cout << std::to_string(keyList.size()) << std::endl;
         exit(0);
+    }
+
+    if (auto mode = std::getenv("MODE"); mode != NULL && strcmp(mode, "check") == 0) {
+        bool failed = false;
+        for (const std::string &a : keyList) {
+            test_number++;
+            if ((test.m_test_number == 0)
+                || (test_number == test.m_test_number)) {
+                const auto &tests = test[a];
+                failed |= perform_check_test(test, tests, &counter);
+            }
+        }
+        return failed ? 1 : 0;
     }
 
     ModSecurityTestResults<RegressionTestResult> res;
