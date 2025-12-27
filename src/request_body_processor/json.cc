@@ -29,8 +29,7 @@ namespace RequestBodyProcessor {
 static const double json_depth_limit_default = 10000.0;
 static const char* json_depth_limit_exceeded_msg = ". Parsing depth limit exceeded";
 
-JSON::JSON(Transaction *transaction)
-    : m_transaction(transaction),
+JSON::JSON(Transaction *transaction) : m_transaction(transaction),
     m_handle(NULL),
     m_current_key(""),
     m_max_depth(json_depth_limit_default),
