@@ -651,6 +651,7 @@
   {
     "enabled":1,
     "version_min":300000,
+    "resource":"libxml2",
     "title":"SecRequestBodyLimitAction ProcessPartial - xml, bad value before limit",
     "client":{
       "ip":"200.249.12.31",
@@ -700,6 +701,7 @@
   {
     "enabled":1,
     "version_min":300000,
+    "resource":"libxml2",
     "title":"SecRequestBodyLimitAction ProcessPartial - xml, bad value after limit",
     "client":{
       "ip":"200.249.12.31",
@@ -749,6 +751,7 @@
   {
     "enabled":1,
     "version_min":300000,
+    "resource":"libxml2",
     "title":"SecRequestBodyLimitAction ProcessPartial - xml, ill-formed, but well-formed before limit",
     "client":{
       "ip":"200.249.12.31",
@@ -797,6 +800,7 @@
   {
     "enabled":1,
     "version_min":300000,
+    "resource":"libxml2",
     "title":"SecRequestBodyLimitAction ProcessPartial - xml, ill-formed starts just before limit",
     "client":{
       "ip":"200.249.12.31",
@@ -845,6 +849,7 @@
   {
     "enabled":1,
     "version_min":300000,
+    "resource":"libxml2",
     "title":"SecRequestBodyLimitAction ProcessPartial - RequestBodyNoFilesLimit ignored",
     "client":{
       "ip":"200.249.12.31",
