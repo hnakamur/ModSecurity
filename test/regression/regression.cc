@@ -296,6 +296,7 @@ void perform_unit_test(const ModSecurityTest<RegressionTest> &test,
         modsec_transaction.appendRequestBody(
             (unsigned char *)t->request_body.c_str(),
             t->request_body.size());
+        std::cout << "[myDebug] request_body_size=" << t->request_body.size() << "\n";
         modsec_transaction.processRequestBody();
         actions(&r, &modsec_transaction, &context.m_server_log);
 

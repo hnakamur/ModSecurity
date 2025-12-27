@@ -152,7 +152,7 @@ class Multipart {
     Multipart(const std::string &header, Transaction *transaction);
     ~Multipart();
 
-    bool init(std::string *err);
+    bool init(bool allow_partial_body, std::string *err);
 
     static int boundary_characters_valid(const char *boundary);
     static int count_boundary_params(const std::string& str_header_value);
@@ -160,7 +160,7 @@ class Multipart {
     int multipart_complete(std::string *err);
 
     int parse_content_disposition(const char *c_d_value, int offset);
-    bool process(const std::string& data, std::string *err, int offset);
+    bool process(const std::string_view data, std::string *err, int offset);
     int process_boundary(int last_part);
     int process_part_header(std::string *error, int offset);
     int process_part_data(std::string *error, size_t offset);
@@ -247,6 +247,7 @@ class Multipart {
  private:
     std::string m_header;
     Transaction *m_transaction;
+    bool m_allow_partial_body;
 };
 
 

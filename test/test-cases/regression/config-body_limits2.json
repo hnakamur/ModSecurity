@@ -1,0 +1,173 @@
+[
+  {
+    "enabled":1,
+    "version_min":300000,
+    "title":"SecRequestBodyLimitAction ProcessPartial - multipart equal to limit",
+    "client":{
+      "ip":"200.249.12.31",
+      "port":123
+    },
+    "server":{
+      "ip":"200.249.12.31",
+      "port":80
+    },
+    "request":{
+      "headers":{
+        "Host":"localhost",
+        "User-Agent":"curl/7.38.0",
+        "Accept":"*/*",
+        "Content-Type": "multipart/form-data; boundary=--------------------------756b6d74fa1a8ee2",
+        "Content-Length": "508"
+      },
+      "uri":"/?key=value&key=other_value",
+      "method":"POST",
+      "body":[
+        "--------------------------756b6d74fa1a8ee2",
+        "Content-Disposition: form-data; name=\"name\"",
+        "",
+        "test",
+        "--------------------------756b6d74fa1a8ee2",
+        "Content-Disposition: form-data; name=\"filedata\"; filename=\"small_text_file.txt\"",
+        "Content-Type: text/plain",
+        "",
+        "This is a very small test file..",
+        "--------------------------756b6d74fa1a8ee2",
+        "Content-Disposition: form-data; name=\"filedata\"; filename=\"small_text_file.txt\"",
+        "Content-Type: text/plain",
+        "",
+        "This is another very small test file..",
+        "--------------------------756b6d74fa1a8ee2--"
+      ]
+    },
+    "response":{
+      "headers":{
+        "Date":"Mon, 13 Jul 2015 20:02:41 GMT",
+        "Last-Modified":"Sun, 26 Oct 2014 22:33:37 GMT",
+        "Content-Type":"text/html"
+      },
+      "body":[
+        "no need."
+      ]
+    },
+    "expected":{
+      "http_code":200
+    },
+    "rules":[
+      "SecRuleEngine On",
+      "SecRequestBodyLimitAction ProcessPartial",
+      "SecRequestBodyLimit 508"
+    ]
+  },
+  {
+    "enabled":1,
+    "version_min":300000,
+    "title":"SecRequestBodyLimitAction ProcessPartial - multipart larger than limit",
+    "client":{
+      "ip":"200.249.12.31",
+      "port":123
+    },
+    "server":{
+      "ip":"200.249.12.31",
+      "port":80
+    },
+    "request":{
+      "headers":{
+        "Host":"localhost",
+        "User-Agent":"curl/7.38.0",
+        "Accept":"*/*",
+        "Content-Type": "multipart/form-data; boundary=--------------------------756b6d74fa1a8ee2",
+        "Content-Length": "508"
+      },
+      "uri":"/?key=value&key=other_value",
+      "method":"POST",
+      "body":[
+        "--------------------------756b6d74fa1a8ee2",
+        "Content-Disposition: form-data; name=\"name\"",
+        "",
+        "test",
+        "--------------------------756b6d74fa1a8ee2",
+        "Content-Disposition: form-data; name=\"filedata\"; filename=\"small_text_file.txt\"",
+        "Content-Type: text/plain",
+        "",
+        "This is a very small test file..",
+        "--------------------------756b6d74fa1a8ee2",
+        "Content-Disposition: form-data; name=\"filedata\"; filename=\"small_text_file.txt\"",
+        "Content-Type: text/plain",
+        "",
+        "This is another very small test file..",
+        "--------------------------756b6d74fa1a8ee2--"
+      ]
+    },
+    "response":{
+      "headers":{
+        "Date":"Mon, 13 Jul 2015 20:02:41 GMT",
+        "Last-Modified":"Sun, 26 Oct 2014 22:33:37 GMT",
+        "Content-Type":"text/html"
+      },
+      "body":[
+        "no need."
+      ]
+    },
+    "expected":{
+      "http_code":200
+    },
+    "rules":[
+      "SecRuleEngine On",
+      "SecRequestBodyLimitAction ProcessPartial",
+      "SecRequestBodyLimit 507",
+      "SecRule REQBODY_ERROR \"!@eq 0\" \"id:'200001', phase:2,t:none,log,deny,status:400,msg:'Failed to parse request body.',logdata:'%{reqbody_error_msg}',severity:2\""
+    ]
+  },
+  {
+    "enabled":1,
+    "version_min":300000,
+    "title":"SecRequestBodyLimitAction ProcessPartial - multipart bad_name before limit",
+    "client":{
+      "ip":"200.249.12.31",
+      "port":123
+    },
+    "server":{
+      "ip":"200.249.12.31",
+      "port":80
+    },
+    "request":{
+      "headers":{
+        "Host":"localhost",
+        "User-Agent":"curl/7.38.0",
+        "Accept":"*/*",
+        "Content-Type": "multipart/form-data; boundary=--------------------------756b6d74fa1a8ee2",
+        "Content-Length": "508"
+      },
+      "uri":"/?key=value&key=other_value",
+      "method":"POST",
+      "body":[
+        "--------------------------756b6d74fa1a8ee2",
+        "Content-Disposition: form-data; name=\"bad_name\"",
+        "",
+        "test",
+        "--------------------------756b6d74fa1a8ee2--"
+      ]
+    },
+    "response":{
+      "headers":{
+        "Date":"Mon, 13 Jul 2015 20:02:41 GMT",
+        "Last-Modified":"Sun, 26 Oct 2014 22:33:37 GMT",
+        "Content-Type":"text/html"
+      },
+      "body":[
+        "no need."
+      ]
+    },
+    "expected":{
+      "http_code":200
+    },
+    "rules":[
+      "SecRuleEngine On",
+      "SecRequestBodyLimitAction ProcessPartial",
+      "SecRequestBodyLimit 507",
+      "SecRule REQBODY_ERROR \"!@eq 0\" \"id:'200001', phase:2,t:none,log,deny,status:400,msg:'Failed to parse request body.',logdata:'%{reqbody_error_msg}',severity:2\"",
+      "SecRule MULTIPART_NAME \"bad_name\" \"id:'200002',phase:2,t:none,deny"
+    ]
+  }
+]
+

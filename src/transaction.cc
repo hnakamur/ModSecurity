@@ -781,7 +781,9 @@ int Transaction::processRequestBody() {
         int reqbodyNoFilesLength = 0;
         if (a != NULL) {
             Multipart m(*a, this);
-            if (m.init(&error) == true) {
+            bool allow_partial_body = is_process_partial && m_requestBodyLimitExceeded;
+            if (m.init(allow_partial_body, &error) == true) {
+                std::cout << "[myDebug] processing multipart, body=" << m_requestBody.str() << ", bodylen=" << m_requestBody.str().length() << "\n";
                 m.process(m_requestBody.str(), &error, m_variableOffset);
             }
             reqbodyNoFilesLength = m.m_reqbody_no_files_length;

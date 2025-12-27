@@ -136,7 +136,8 @@ Multipart::Multipart(const std::string &header, Transaction *transaction)
     m_flag_invalid_header_folding(0),
     m_flag_file_limit_exceeded(0),
     m_header(header),
-    m_transaction(transaction) { }
+    m_transaction(transaction),
+    m_allow_partial_body(false) { }
 
 
 Multipart::~Multipart() {
@@ -1206,7 +1207,9 @@ int Multipart::multipart_complete(std::string *error) {
         } else {
             ms_dbg_a(m_transaction, 1,
                 "Multipart: No boundaries found in payload.");
-            error->assign("Multipart: No boundaries found in payload.");
+            if (!m_allow_partial_body) {
+                error->assign("Multipart: No boundaries found in payload.");
+            }
             return false;
         }
     }
@@ -1297,7 +1300,8 @@ int Multipart::count_boundary_params(const std::string& str_header_value) {
 }
 
 
-bool Multipart::init(std::string *error) {
+bool Multipart::init(bool allow_partial_body, std::string *error) {
+    m_allow_partial_body = allow_partial_body;
     m_bufleft = MULTIPART_BUF_SIZE;
     m_bufptr = m_buf;
     m_buf_contains_line = true;
@@ -1500,9 +1504,9 @@ bool Multipart::init(std::string *error) {
  * Assuming that all data is on data. We are not processing chunks.
  *
  */
-bool Multipart::process(const std::string& data, std::string *error,
+bool Multipart::process(const std::string_view data, std::string *error,
     int offset) {
-    const char *inptr = data.c_str();
+    const char *inptr = data.data();
     unsigned int inleft = data.size();
     size_t z = 0;
 
