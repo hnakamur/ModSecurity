@@ -140,8 +140,15 @@ void ModSecurityTest<T>::cmd_options(int argc, char **argv) {
         i++;
         m_test_multithreaded = true;
     }
+    if (argc > i && strcmp(argv[i], "alwaysshowlog") == 0) {
+        i++;
+        m_always_show_log = true;
+    }
     if (std::getenv("AUTOMAKE_TESTS")) {
         m_automake_output = true;
+    }
+    if (std::getenv("ALWAYS_SHOW_LOG")) {
+        m_always_show_log = true;
     }
 
     if (argc > i && argv[i]) {
