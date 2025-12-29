@@ -49,6 +49,7 @@ template <class T> class ModSecurityTest :
     bool m_format{false};
     bool m_update_content_length{false};
     bool m_always_show_log{false};
+    bool m_show_request_body_size{false};
 };
 
 }  // namespace modsecurity_test
