@@ -793,7 +793,7 @@
   {
     "enabled": 1,
     "version_min": 300000,
-    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/CRLF/partial/bad-header in part across limit #2",
+    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/CRLF/partial/bad-header in part before limit #1",
     "client": {
       "ip": "200.249.12.31",
       "port": 123
@@ -834,7 +834,7 @@
     },
     "expected": {
       "debug_log": "Appending request body: 116 bytes. Limit set to: 115",
-      "http_code": 200
+      "http_code": 403
     },
     "rules": [
       "SecRuleEngine On",
@@ -847,7 +847,7 @@
   {
     "enabled": 1,
     "version_min": 300000,
-    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/CRLF/partial/bad-header in part across limit #3",
+    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/CRLF/partial/bad-header in part before limit #2",
     "client": {
       "ip": "200.249.12.31",
       "port": 123
@@ -888,7 +888,7 @@
     },
     "expected": {
       "debug_log": "Appending request body: 117 bytes. Limit set to: 116",
-      "http_code": 200
+      "http_code": 403
     },
     "rules": [
       "SecRuleEngine On",
@@ -901,7 +901,7 @@
   {
     "enabled": 1,
     "version_min": 300000,
-    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/CRLF/partial/bad-header in part before limit #1",
+    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/CRLF/partial/bad-header in part before limit #3",
     "client": {
       "ip": "200.249.12.31",
       "port": 123
@@ -956,7 +956,7 @@
   {
     "enabled": 1,
     "version_min": 300000,
-    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/CRLF/partial/bad-header in part before limit #2",
+    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/CRLF/partial/bad-header in part before limit #4",
     "client": {
       "ip": "200.249.12.31",
       "port": 123
@@ -1011,7 +1011,7 @@
   {
     "enabled": 1,
     "version_min": 300000,
-    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/CRLF/partial/bad-header in part before limit #3",
+    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/CRLF/partial/bad-header in part before limit #5",
     "client": {
       "ip": "200.249.12.31",
       "port": 123
@@ -1107,7 +1107,7 @@
     },
     "expected": {
       "debug_log": "Appending request body: 117 bytes. Limit set to: 116",
-      "http_code": 200
+      "http_code": 403
     },
     "rules": [
       "SecRuleEngine On",
@@ -1220,7 +1220,7 @@
     },
     "expected": {
       "debug_log": "Appending request body: 206 bytes. Limit set to: 205",
-      "http_code": 200
+      "http_code": 403
     },
     "rules": [
       "SecRuleEngine On",
@@ -1292,7 +1292,7 @@
   {
     "enabled": 1,
     "version_min": 300000,
-    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/CRLF/partial/invalid final boundary before limit #1",
+    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/CRLF/partial/invalid boundary before limit #1",
     "client": {
       "ip": "200.249.12.31",
       "port": 123
@@ -1333,6 +1333,7 @@
     },
     "expected": {
       "debug_log": "Appending request body: 119 bytes. Limit set to: 118",
+      "error_log": "Multipart parsing error: Multipart: Invalid boundary.",
       "http_code": 400
     },
     "rules": [
@@ -1345,7 +1346,61 @@
   {
     "enabled": 1,
     "version_min": 300000,
-    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/CRLF/partial/invalid final boundary before limit #2",
+    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/CRLF/partial/invalid boundary before limit #2",
+    "client": {
+      "ip": "200.249.12.31",
+      "port": 123
+    },
+    "server": {
+      "ip": "200.249.12.31",
+      "port": 80
+    },
+    "request": {
+      "headers": {
+        "Host": "localhost",
+        "User-Agent": "curl/7.38.0",
+        "Accept": "*/*",
+        "Content-Type": "multipart/form-data; boundary=0000",
+        "Content-Length": "120"
+      },
+      "uri": "/test.txt",
+      "method": "POST",
+      "body": [
+        "--0000\r\n",
+        "Content-Disposition: form-data; name=\"name1\"; filename=\"name1.txt\"\r\n",
+        "Content-Type: text/plain\r\n",
+        "\r\n",
+        "value\r\n",
+        "--0000\r!X"
+      ]
+    },
+    "response": {
+      "headers": {
+        "Date": "Mon, 13 Jul 2015 20:02:41 GMT",
+        "Last-Modified": "Sun, 26 Oct 2014 22:33:37 GMT",
+        "Content-Type": "text/html",
+        "Content-Length": "8"
+      },
+      "body": [
+        "no need."
+      ]
+    },
+    "expected": {
+      "debug_log": "Appending request body: 120 bytes. Limit set to: 119",
+      "error_log": "Multipart parsing error: Multipart: Invalid boundary.",
+      "http_code": 400
+    },
+    "rules": [
+      "SecRuleEngine On",
+      "SecRequestBodyLimitAction ProcessPartial",
+      "SecRequestBodyLimit 119",
+      "SecRule REQBODY_ERROR \"!@eq 0\" \"id:'200001', phase:2,t:none,log,deny,status:400,msg:'Failed to parse request body.',logdata:'%{reqbody_error_msg}',severity:2\""
+    ]
+  },
+  {
+    "enabled": 1,
+    "version_min": 300000,
+    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/CRLF/partial/invalid final boundary before limit #1",
     "client": {
       "ip": "200.249.12.31",
       "port": 123
@@ -1386,6 +1441,7 @@
     },
     "expected": {
       "debug_log": "Appending request body: 120 bytes. Limit set to: 119",
+      "error_log": "Multipart parsing error: Multipart: Invalid final boundary.",
       "http_code": 400
     },
     "rules": [
@@ -1452,7 +1508,7 @@
   {
     "enabled": 1,
     "version_min": 300000,
-    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/LF/partial/bad-header in part across limit #2",
+    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/LF/partial/bad-header in part before limit #1",
     "client": {
       "ip": "200.249.12.31",
       "port": 123
@@ -1493,7 +1549,7 @@
     },
     "expected": {
       "debug_log": "Appending request body: 111 bytes. Limit set to: 110",
-      "http_code": 200
+      "http_code": 403
     },
     "rules": [
       "SecRuleEngine On",
@@ -1506,7 +1562,7 @@
   {
     "enabled": 1,
     "version_min": 300000,
-    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/LF/partial/bad-header in part before limit #1",
+    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/LF/partial/bad-header in part before limit #2",
     "client": {
       "ip": "200.249.12.31",
       "port": 123
@@ -1561,7 +1617,7 @@
   {
     "enabled": 1,
     "version_min": 300000,
-    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/LF/partial/bad-header in part before limit #2",
+    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/LF/partial/bad-header in part before limit #3",
     "client": {
       "ip": "200.249.12.31",
       "port": 123
@@ -1616,7 +1672,7 @@
   {
     "enabled": 1,
     "version_min": 300000,
-    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/LF/partial/bad-header in part before limit #3",
+    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/LF/partial/bad-header in part before limit #4",
     "client": {
       "ip": "200.249.12.31",
       "port": 123
@@ -1712,7 +1768,7 @@
     },
     "expected": {
       "debug_log": "Appending request body: 112 bytes. Limit set to: 111",
-      "http_code": 200
+      "http_code": 403
     },
     "rules": [
       "SecRuleEngine On",
@@ -1825,7 +1881,7 @@
     },
     "expected": {
       "debug_log": "Appending request body: 196 bytes. Limit set to: 195",
-      "http_code": 200
+      "http_code": 403
     },
     "rules": [
       "SecRuleEngine On",
@@ -1897,7 +1953,7 @@
   {
     "enabled": 1,
     "version_min": 300000,
-    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/LF/partial/invalid final boundary before limit #1",
+    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/LF/partial/invalid boundary before limit #1",
     "client": {
       "ip": "200.249.12.31",
       "port": 123
@@ -1938,6 +1994,7 @@
     },
     "expected": {
       "debug_log": "Appending request body: 114 bytes. Limit set to: 113",
+      "error_log": "Multipart parsing error: Multipart: Invalid boundary.",
       "http_code": 400
     },
     "rules": [
@@ -1950,7 +2007,7 @@
   {
     "enabled": 1,
     "version_min": 300000,
-    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/LF/partial/invalid final boundary before limit #2",
+    "title": "SecRequestBodyLimitAction ProcessPartial - multipart/LF/partial/invalid final boundary before limit #1",
     "client": {
       "ip": "200.249.12.31",
       "port": 123
@@ -1991,6 +2048,7 @@
     },
     "expected": {
       "debug_log": "Appending request body: 115 bytes. Limit set to: 114",
+      "error_log": "Multipart parsing error: Multipart: Invalid final boundary.",
       "http_code": 400
     },
     "rules": [
