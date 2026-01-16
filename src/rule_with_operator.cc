@@ -196,6 +196,23 @@ inline void RuleWithOperator::getFinalVars(variables::Variables *vars,
 }
 
 
+static void saveMatchedOpAndVars(Transaction *trans,
+    RuleMessage &ruleMessage,
+    const std::string &op) {
+
+    ruleMessage.m_matchedOp = op;
+
+    std::vector<const VariableValue *> l;
+    trans->m_variableMatchedVars.resolve(&l);
+    for (auto i : l) {
+        ruleMessage.m_matchedVars.push_back({i->getKey(), i->getValue()});
+    }
+    for (const VariableValue * i : l) {
+        delete i;
+    }
+}
+
+
 bool RuleWithOperator::evaluate(Transaction *trans,
     RuleMessage &ruleMessage) {
     bool globalRet = false;
@@ -303,6 +320,7 @@ bool RuleWithOperator::evaluate(Transaction *trans,
 
                     ruleMessage.m_reference.append(*valueTemp.second);
                     updateMatchedVars(trans, key, valueAfterTrans);
+                    saveMatchedOpAndVars(trans, ruleMessage, m_operator->m_op);
                     executeActionsIndependentOfChainedRuleResult(trans,
                         &containsBlock, ruleMessage);
 

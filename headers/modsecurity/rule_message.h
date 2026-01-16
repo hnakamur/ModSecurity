@@ -25,6 +25,7 @@
 
 #include <string>
 #include <list>
+#include <utility>
 
 namespace modsecurity {
 
@@ -58,6 +59,9 @@ class RuleMessage {
             m_saveMessage = true;
         m_severity = 0;
         m_tags.clear();
+
+        m_matchedOp.clear();
+        m_matchedVars.clear();
     }
 
     std::string log() const {
@@ -99,6 +103,9 @@ class RuleMessage {
     int m_severity = 0;
 
     std::list<std::string> m_tags;
+
+    std::string m_matchedOp;
+    std::vector<std::pair<std::string, std::string>> m_matchedVars;
 };
 
 

@@ -1753,6 +1753,17 @@ std::string Transaction::toJSON(int parts) {
 
             LOGFY_ADD("maturity", std::to_string(a.m_rule.m_maturity));
             LOGFY_ADD("accuracy", std::to_string(a.m_rule.m_accuracy));
+
+            LOGFY_ADD("matchedOp", a.m_matchedOp);
+            yajl_gen_string(g,
+                reinterpret_cast<const unsigned char*>("matchedVars"),
+                strlen("matchedVars"));
+            yajl_gen_map_open(g);
+            for (auto b : a.m_matchedVars) {
+                LOGFY_ADD(b.first.c_str(), b.second);
+            }
+            yajl_gen_map_close(g);
+
             yajl_gen_map_close(g);
             yajl_gen_map_close(g);
         }
