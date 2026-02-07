@@ -1764,6 +1764,12 @@ std::string Transaction::toJSON(int parts) {
             RulesSet::ruleEngineStateString(
             (RulesSetProperties::RuleEngine) getRuleEngineState()));
 
+        /* producer > request_body_limit_exceeded state */
+        LOGFY_ADD("request_body_limit_exceeded", m_variableInboundDataError.m_value);
+        /* producer > response_body_limit_exceeded state */
+        auto variableOutboundDataErrorValue{m_variableOutboundDataError.m_value.empty() ? std::string{"0"} : m_variableOutboundDataError.m_value};
+        LOGFY_ADD("response_body_limit_exceeded", variableOutboundDataErrorValue);
+
         /* producer > components */
         yajl_gen_string(g,
             reinterpret_cast<const unsigned char*>("components"),
