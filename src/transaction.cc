@@ -150,6 +150,7 @@ Transaction::Transaction(ModSecurity *ms, RulesSet *rules, const char *id,
     m_secRuleEngine(RulesSetProperties::PropertyNotSetRuleEngine),
     m_secXMLParseXmlIntoArgs(rules->m_secXMLParseXmlIntoArgs),
     m_logCbData(logCbData),
+    m_requestBodyLimitExceeded(false),
     TransactionAnchoredVariables(this) {
     m_variableUrlEncodedError.set("0", 0);
     m_variableMscPcreError.set("0", 0);
@@ -252,12 +253,15 @@ int Transaction::processConnection(const char *client, int cPort,
 
 
 bool Transaction::extractArguments(const std::string &orig,
-    const std::string& buf, size_t offset) {
+    const std::string& buf, size_t offset, bool partial_processing_enabled) {
     char sep1 = '&';
     if (m_rules->m_secArgumentSeparator.m_set) {
         sep1 = m_rules->m_secArgumentSeparator.m_value.at(0);
     }
-    const auto key_value_sets = utils::string::ssplit(buf, sep1);
+    auto key_value_sets = utils::string::ssplit(buf, sep1);
+    if (partial_processing_enabled && (buf.empty() || buf.back() != sep1)) {
+        key_value_sets.pop_back();
+    }
 
     for (const auto &t : key_value_sets) {
         const auto sep2 = '=';
@@ -694,27 +698,36 @@ int Transaction::processRequestBody() {
     std::unique_ptr<std::string> a = m_variableRequestHeaders.resolveFirst(
         "Content-Type");
 
+    bool is_process_partial = (m_rules->m_requestBodyLimitAction
+        == RulesSet::BodyLimitAction::ProcessPartialBodyLimitAction);
+
     bool requestBodyNoFilesLimitExceeded = false;
     if ((m_requestBodyType == WWWFormUrlEncoded) ||
         (m_requestBodyProcessor == JSONRequestBody) ||
         (m_requestBodyProcessor == XMLRequestBody)) {
         if ((m_rules->m_requestBodyNoFilesLimit.m_set)
             && (m_requestBody.str().size() > m_rules->m_requestBodyNoFilesLimit.m_value)) {
-            m_variableReqbodyError.set("1", 0);
-            m_variableReqbodyErrorMsg.set("Request body excluding files is bigger than the maximum expected.", 0);
-            m_variableInboundDataError.set("1", m_variableOffset);
-            ms_dbg(5, "Request body excluding files is bigger than the maximum expected. Limit: " \
-                + std::to_string(m_rules->m_requestBodyNoFilesLimit.m_value));
+            if (!is_process_partial) {
+                m_variableReqbodyError.set("1", 0);
+                m_variableReqbodyErrorMsg.set("Request body excluding files is bigger than the maximum expected.", 0);
+                m_variableInboundDataError.set("1", m_variableOffset);
+                ms_dbg(5, "Request body excluding files is bigger than the maximum expected. Limit: " \
+                    + std::to_string(m_rules->m_requestBodyNoFilesLimit.m_value));
+            }
             requestBodyNoFilesLimitExceeded = true;
-	}
+	    }
     }
 
 #ifdef WITH_LIBXML2
     if (m_requestBodyProcessor == XMLRequestBody) {
         // large size might cause issues in the parsing itself; omit if exceeded
-        if (!requestBodyNoFilesLimitExceeded) {
+        if (!requestBodyNoFilesLimitExceeded || is_process_partial) {
             std::string error;
-            if (m_xml->init() == true) {
+            bool require_well_formed = !(is_process_partial && m_requestBodyLimitExceeded);
+            if (!require_well_formed) {
+                ms_dbg(4, "XML: Allow partial processing of request body");
+            }
+            if (m_xml->init(require_well_formed) == true) {
                 m_xml->processChunk(m_requestBody.str().c_str(),
                     m_requestBody.str().size(),
                     &error);
@@ -740,12 +753,16 @@ int Transaction::processRequestBody() {
     if (m_requestBodyProcessor == JSONRequestBody) {
 #endif
         // large size might cause issues in the parsing itself; omit if exceeded
-        if (!requestBodyNoFilesLimitExceeded) {
+        if (!requestBodyNoFilesLimitExceeded || is_process_partial) {
             std::string error;
             if (m_rules->m_requestBodyJsonDepthLimit.m_set) {
                 m_json->setMaxDepth(m_rules->m_requestBodyJsonDepthLimit.m_value);
             }
-            if (m_json->init() == true) {
+            unsigned int allow_partial_values = is_process_partial && m_requestBodyLimitExceeded;
+            if (allow_partial_values) {
+                ms_dbg(4, "JSON: Allow partial processing of request body");
+            }
+            if (m_json->init(allow_partial_values) == true) {
                 m_json->processChunk(m_requestBody.str().c_str(),
                     m_requestBody.str().size(),
                     &error);
@@ -774,6 +791,10 @@ int Transaction::processRequestBody() {
         if (a != NULL) {
             Multipart m(*a, this);
             if (m.init(&error) == true) {
+                m.m_allow_partial = is_process_partial && m_requestBodyLimitExceeded;
+                if (m.m_allow_partial) {
+                    ms_dbg(4, "Multipart: Allow partial processing of request body");
+                }
                 m.process(m_requestBody.str(), &error, m_variableOffset);
             }
             reqbodyNoFilesLength = m.m_reqbody_no_files_length;
@@ -800,9 +821,10 @@ int Transaction::processRequestBody() {
     } else if (m_requestBodyType == WWWFormUrlEncoded) {
         m_variableOffset++;
         // large size might cause issues in the parsing itself; omit if exceeded
-        if (!requestBodyNoFilesLimitExceeded) {
-            extractArguments("POST", m_requestBody.str(), m_variableOffset);
-	}
+        if (!requestBodyNoFilesLimitExceeded || is_process_partial) {
+            bool partial_processing_enabled = is_process_partial && m_requestBodyLimitExceeded;
+            extractArguments("POST", m_requestBody.str(), m_variableOffset, partial_processing_enabled);
+	    }
     } else if (m_requestBodyType != UnknownFormat) {
         /**
          * FIXME: double check to see if that is a valid scenario...
@@ -935,6 +957,7 @@ int Transaction::appendRequestBody(const unsigned char *buf, size_t len) {
 
     if (this->m_rules->m_requestBodyLimit.m_value > 0
         && this->m_rules->m_requestBodyLimit.m_value < len + current_size) {
+        m_requestBodyLimitExceeded = true;
         m_variableInboundDataError.set("1", m_variableOffset);
         ms_dbg(5, "Request body is bigger than the maximum expected.");
 

@@ -121,6 +121,7 @@ Multipart::Multipart(const std::string &header, Transaction *transaction)
     m_reserve{0},
     m_seen_data(0),
     m_is_complete(0),
+    m_allow_partial(false),
     m_flag_error(0),
     m_flag_data_before(0),
     m_flag_data_after(0),
@@ -1151,53 +1152,108 @@ int Multipart::multipart_complete(std::string *error) {
              * processed yet) in the buffer.
              */
             if (m_buf_contains_line) {
-                if (((unsigned int)(MULTIPART_BUF_SIZE - m_bufleft)
-                        == (4 + m_boundary.size()))
+                /*
+                 * Note that the buffer may end with the final boundary followed by only CR,
+                 * coming from the [CRLF epilogue], when allow_process_partial == 1 (which is
+                 * set when SecRequestBodyLimitAction is ProcessPartial and the request body
+                 * length exceeds SecRequestBodyLimit).
+                 *
+                 * The following definitions are copied from RFC 2046:
+                 *
+                 * dash-boundary := "--" boundary
+                 *
+                 * delimiter := CRLF dash-boundary
+                 *
+                 * close-delimiter := delimiter "--"
+                 *
+                 * multipart-body := [preamble CRLF]
+                 *                   dash-boundary transport-padding CRLF
+                 *                   body-part *encapsulation
+                 *                   close-delimiter transport-padding
+                 *                   [CRLF epilogue]
+                 */
+                unsigned int buf_data_len = (unsigned int)(MULTIPART_BUF_SIZE - m_bufleft);
+                if ((buf_data_len >= 2 + m_boundary.size())
                     && (*(m_buf) == '-')
                     && (*(m_buf + 1) == '-')
                     && (strncmp(m_buf + 2, m_boundary.c_str(),
-                        m_boundary.size()) == 0)
-                    && (*(m_buf + 2 + m_boundary.size()) == '-')
-                    && (*(m_buf + 2 + m_boundary.size() + 1) == '-')) {
-                    // these next two checks may result in repeating work from earlier in this fn
-                    // ignore the duplication for now to minimize refactoring
-                    if ((m_crlf_state_buf_end == 2) && (m_flag_lf_line != 1)) {
-                        m_flag_lf_line = 1;
-                        m_transaction->m_variableMultipartLFLine.set(std::to_string(m_flag_lf_line),
-                            m_transaction->m_variableOffset);
-                        m_transaction->m_variableMultipartCrlfLFLines.set(std::to_string(m_flag_crlf_line && m_flag_lf_line),
-                            m_transaction->m_variableOffset);
-                        if (m_flag_crlf_line && m_flag_lf_line) {
-                            ms_dbg_a(m_transaction, 4, "Multipart: Warning: mixed line endings used (CRLF/LF).");
-                        } else if (m_flag_lf_line) {
-                            ms_dbg_a(m_transaction, 4, "Multipart: Warning: incorrect line endings used (LF).");
+                        m_boundary.size()) == 0)) {
+                    if ((buf_data_len >= 2 + m_boundary.size() + 2)
+                            && (*(m_buf + 2 + m_boundary.size()) == '-')
+                        && (*(m_buf + 2 + m_boundary.size() + 1) == '-')) {
+                        /* If body fits in limit and ends with final boundary plus just CR, reject it. */
+                        if ( (m_allow_partial == 0)
+                            && (buf_data_len == 2 + m_boundary.size() + 2 + 1)
+                            && (*(m_buf + 2 + m_boundary.size() + 2) == '\r') ) {
+                            ms_dbg_a(m_transaction, 1,
+                                "Multipart: Invalid epilogue after final boundary.");
+                            error->assign("Multipart: Invalid epilogue after final boundary.");
+                            return false;
                         }
-                        m_transaction->m_variableMultipartStrictError.set(
-                            std::to_string(m_flag_lf_line) , m_transaction->m_variableOffset);
-		    }
-                    if ((m_mpp_substate_part_data_read == 0) && (m_flag_invalid_part != 1)) {
-                        // it looks like the final boundary, but it's where part data should begin
-                        m_flag_invalid_part = 1;
-                        ms_dbg_a(m_transaction, 3, "Multipart: Invalid part (data contains final boundary)");
-                        m_transaction->m_variableMultipartStrictError.set(
-                            std::to_string(m_flag_invalid_part) , m_transaction->m_variableOffset);
-                        m_transaction->m_variableMultipartInvalidPart.set(std::to_string(m_flag_invalid_part),
-                            m_transaction->m_variableOffset);
-                        ms_dbg_a(m_transaction, 4, "Multipart: Warning: invalid part parsing.");
-                    }
+                        // these next two checks may result in repeating work from earlier in this fn
+                        // ignore the duplication for now to minimize refactoring
+                        if ((m_crlf_state_buf_end == 2) && (m_flag_lf_line != 1)) {
+                            m_flag_lf_line = 1;
+                            m_transaction->m_variableMultipartLFLine.set(std::to_string(m_flag_lf_line),
+                                m_transaction->m_variableOffset);
+                            m_transaction->m_variableMultipartCrlfLFLines.set(std::to_string(m_flag_crlf_line && m_flag_lf_line),
+                                m_transaction->m_variableOffset);
+                            if (m_flag_crlf_line && m_flag_lf_line) {
+                                ms_dbg_a(m_transaction, 4, "Multipart: Warning: mixed line endings used (CRLF/LF).");
+                            } else if (m_flag_lf_line) {
+                                ms_dbg_a(m_transaction, 4, "Multipart: Warning: incorrect line endings used (LF).");
+                            }
+                            m_transaction->m_variableMultipartStrictError.set(
+                                std::to_string(m_flag_lf_line) , m_transaction->m_variableOffset);
+                        }
+                        if ((m_mpp_substate_part_data_read == 0) && (m_flag_invalid_part != 1)) {
+                            // it looks like the final boundary, but it's where part data should begin
+                            m_flag_invalid_part = 1;
+                            ms_dbg_a(m_transaction, 3, "Multipart: Invalid part (data contains final boundary)");
+                            m_transaction->m_variableMultipartStrictError.set(
+                                std::to_string(m_flag_invalid_part) , m_transaction->m_variableOffset);
+                            m_transaction->m_variableMultipartInvalidPart.set(std::to_string(m_flag_invalid_part),
+                                m_transaction->m_variableOffset);
+                            ms_dbg_a(m_transaction, 4, "Multipart: Warning: invalid part parsing.");
+                        }
 
-                    /* Looks like the final boundary - process it. */
-                    if (process_boundary(1 /* final */) < 0) {
-                        m_flag_error = 1;
-                        return -1;
-                    }
+                        /* Looks like the final boundary - process it. */
+                        if (process_boundary(1 /* final */) < 0) {
+                            m_flag_error = 1;
+                            return -1;
+                        }
 
-                    /* The payload is complete after all. */
-                    m_is_complete = 1;
+                        /* The payload is complete after all. */
+                        m_is_complete = 1;
+                    } else if (m_allow_partial) {
+                        if (buf_data_len >= 2 + m_boundary.size() + 1) {
+                            if (*(m_buf + 2 + m_boundary.size()) == '-') {
+                                if ((buf_data_len >= 2 + m_boundary.size() + 2)
+                                    && (*(m_buf + 2 + m_boundary.size() + 1) != '-')) {
+                                    ms_dbg_a(m_transaction, 1,
+                                        "Multipart: Invalid final boundary.");
+                                    error->assign("Multipart: Invalid final boundary.");
+                                    return false;
+                                }
+                            } else if ((*(m_buf + 2 + m_boundary.size()) != '\r') 
+                                || ((buf_data_len >= 2 + m_boundary.size() + 2)
+                                    && (*(m_buf + 2 + m_boundary.size() + 1) != '\n'))) {
+                                ms_dbg_a(m_transaction, 1,
+                                    "Multipart: Invalid boundary.");
+                                error->assign("Multipart: Invalid boundary.");
+                                return false;
+                            }
+                        }
+                        /* process it as a non-final boundary to avoid building a new part. */
+                        if (process_boundary(0) < 0) {
+                            m_flag_error = 1;
+                            return -1;
+                        }
+                    }
                 }
             }
 
-            if (m_is_complete == 0) {
+            if (m_is_complete == 0 && !m_allow_partial) {
                 ms_dbg_a(m_transaction, 1,
                     "Multipart: Final boundary missing.");
                 error->assign("Multipart: Final boundary missing.");
@@ -1563,7 +1619,7 @@ bool Multipart::process(const std::string& data, std::string *error,
                         m_boundary.size()) == 0)) {
                     if (m_crlf_state_buf_end == 2) {
                         m_flag_lf_line = 1;
-		    }
+                    }
                     if ((m_mpp_substate_part_data_read == 0) && (m_boundary_count > 0)) {
                         /* string matches our boundary, but it's where part data should begin */
                         m_flag_invalid_part = 1;
