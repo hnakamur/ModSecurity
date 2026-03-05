@@ -215,8 +215,8 @@ static void internal_log_ex(request_rec *r, directory_config *dcfg, modsec_rec *
     apr_size_t nbytes, nbytes_written;
     apr_file_t *debuglog_fd = NULL;
     int filter_debug_level = 0;
-    char str1[1024] = "";
-    char str2[1256] = "";
+    char str1[10240] = "";
+    char str2[12560] = "";
 
     /* Find the logging FD and determine the logging level from configuration. */
     if (dcfg != NULL) {

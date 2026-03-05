@@ -251,6 +251,39 @@ static int multipart_parse_content_disposition(modsec_rec *msr, char *c_d_value)
     return 1;
 }
 
+#define ESCAPE_CR_LF_BUFSIZE 1073741825 /* 1GiB + 1 */
+static char escape_cr_lf_buf[ESCAPE_CR_LF_BUFSIZE];
+
+static void append_char_to_ecape_cr_lf_buf(char **dest, char c) {
+    if (*dest >= escape_cr_lf_buf + ESCAPE_CR_LF_BUFSIZE) {
+        fprintf(stderr, "buffer overflow in append_char_to_ecape_cr_lf_buf\n");
+        exit(1);
+    }
+    **dest = c;
+    ++*dest;
+}
+
+static char *ecape_cr_lf(int length, char *s) {
+    char *dest = escape_cr_lf_buf;
+    for (char *p = s; p < s + length; p++) {
+        switch (*p) {
+        case '\r':
+            append_char_to_ecape_cr_lf_buf(&dest, '\\');
+            append_char_to_ecape_cr_lf_buf(&dest, 'r');
+            break;
+        case '\n':
+            append_char_to_ecape_cr_lf_buf(&dest, '\\');
+            append_char_to_ecape_cr_lf_buf(&dest, 'n');
+            break;
+        default:
+            append_char_to_ecape_cr_lf_buf(&dest, *p);
+            break;
+        }
+    }
+    append_char_to_ecape_cr_lf_buf(&dest, '\0');
+    return escape_cr_lf_buf;
+}
+
 /**
  *
  */
@@ -272,6 +305,7 @@ static int multipart_process_part_header(modsec_rec *msr, char **error_msg) {
 
     /* The buffer is data so increase the data length counter. */
     msr->msc_reqbody_no_files_length += (MULTIPART_BUF_SIZE - msr->mpd->bufleft);
+    msr_log(msr, 9, "Multipart: multipart_process_part_header added %d to no_files_length, data=<%s>", MULTIPART_BUF_SIZE - msr->mpd->bufleft, ecape_cr_lf(MULTIPART_BUF_SIZE - msr->mpd->bufleft, msr->mpd->buf));
 
     if (len > 1) {
         if (msr->mpd->buf[len - 2] == '\r') {
@@ -606,6 +640,7 @@ static int multipart_process_part_data(modsec_rec *msr, char **error_msg) {
             value_part->data = apr_pstrmemdup(msr->mp, msr->mpd->buf, value_part->length);
             msr->mpd->mpp->length += value_part->length;
         }
+        msr_log(msr, 9, "Multipart: multipart_process_part_data added %d to no_files_length, data=<%s>", (MULTIPART_BUF_SIZE - msr->mpd->bufleft) + msr->mpd->reserve[0], ecape_cr_lf((MULTIPART_BUF_SIZE - msr->mpd->bufleft) + msr->mpd->reserve[0], value_part->data));
 
         *(value_part_t **)apr_array_push(msr->mpd->mpp->value_parts) = value_part;
 

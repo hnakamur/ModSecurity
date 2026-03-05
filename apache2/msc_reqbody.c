@@ -361,6 +361,7 @@ apr_status_t modsecurity_request_body_store(modsec_rec *msr,
         else if (strcmp(msr->msc_reqbody_processor, "XML") == 0) {
             /* Increase per-request data length counter. */
             msr->msc_reqbody_no_files_length += length;
+            msr_log(msr, 9, "XML: modsecurity_request_body_store added %" APR_SIZE_T_FMT " to no_files_length", length);
 
             /* Process data as XML. */
             if (xml_process_chunk(msr, data, length, &my_error_msg) < 0) {
@@ -373,6 +374,7 @@ apr_status_t modsecurity_request_body_store(modsec_rec *msr,
         else if (strcmp(msr->msc_reqbody_processor, "JSON") == 0) {
             /* Increase per-request data length counter. */
             msr->msc_reqbody_no_files_length += length;
+            msr_log(msr, 9, "JSON: modsecurity_request_body_store added %" APR_SIZE_T_FMT " to no_files_length", length);
 
             /* Process data as JSON. */
 #ifdef WITH_YAJL
@@ -392,6 +394,7 @@ apr_status_t modsecurity_request_body_store(modsec_rec *msr,
         else if (strcmp(msr->msc_reqbody_processor, "URLENCODED") == 0) {
             /* Increase per-request data length counter. */
             msr->msc_reqbody_no_files_length += length;
+            msr_log(msr, 9, "URLENCODED: modsecurity_request_body_store added %" APR_SIZE_T_FMT " to no_files_length", length);
 
             /* Do nothing else, URLENCODED processor does not support streaming. */
         }
@@ -403,6 +406,7 @@ apr_status_t modsecurity_request_body_store(modsec_rec *msr,
     } else if (msr->txcfg->reqbody_buffering != REQUEST_BODY_FORCEBUF_OFF) {
         /* Increase per-request data length counter if forcing buffering. */
         msr->msc_reqbody_no_files_length += length;
+        msr_log(msr, 9, "reqbody_buffering: modsecurity_request_body_store added %" APR_SIZE_T_FMT " to no_files_length", length);
     }
 
     /* Check that we are not over the request body no files limit. */
