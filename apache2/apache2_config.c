@@ -63,6 +63,7 @@ void *create_directory_config(apr_pool_t *mp, char *path)
 
     dcfg->of_limit = NOT_SET;
     dcfg->if_limit_action = NOT_SET;
+    dcfg->if_no_files_limit_action = NOT_SET;
     dcfg->of_limit_action = NOT_SET;
     dcfg->of_mime_types = NOT_SET_P;
     dcfg->of_mime_types_cleared = NOT_SET;
@@ -357,6 +358,8 @@ void *merge_directory_configs(apr_pool_t *mp, void *_parent, void *_child)
         ? parent->of_limit : child->of_limit);
     merged->if_limit_action = (child->if_limit_action == NOT_SET
         ? parent->if_limit_action : child->if_limit_action);
+    merged->if_no_files_limit_action = (child->if_no_files_limit_action == NOT_SET
+        ? parent->if_no_files_limit_action : child->if_no_files_limit_action);
     merged->of_limit_action = (child->of_limit_action == NOT_SET
         ? parent->of_limit_action : child->of_limit_action);
     merged->reqintercept_oe = (child->reqintercept_oe == NOT_SET
@@ -671,6 +674,7 @@ void init_directory_config(directory_config *dcfg)
     if (dcfg->resbody_access == NOT_SET) dcfg->resbody_access = 0;
     if (dcfg->of_limit == NOT_SET) dcfg->of_limit = RESPONSE_BODY_DEFAULT_LIMIT;
     if (dcfg->if_limit_action == NOT_SET) dcfg->if_limit_action = REQUEST_BODY_LIMIT_ACTION_REJECT;
+    if (dcfg->if_no_files_limit_action == NOT_SET) dcfg->if_no_files_limit_action = REQUEST_BODY_NO_FILES_LIMIT_ACTION_REJECT;
     if (dcfg->of_limit_action == NOT_SET) dcfg->of_limit_action = RESPONSE_BODY_LIMIT_ACTION_REJECT;
 
     if (dcfg->of_mime_types == NOT_SET_P) {
@@ -2329,6 +2333,43 @@ static const char *cmd_resquest_body_limit_action(cmd_parms *cmd, void *_dcfg,
     return NULL;
 }
 
+/**
+* \brief Add SecRequestBodyNoFilesLimitAction configuration option
+*
+* \param cmd Pointer to configuration data
+* \param _dcfg Pointer to directory configuration
+* \param p1 Pointer to configuration option
+*
+* \retval NULL On failure
+* \retval apr_psprintf On success
+*/
+static const char *cmd_resquest_body_no_files_limit_action(cmd_parms *cmd, void *_dcfg,
+                                                           const char *p1)
+{
+    assert(cmd != NULL);
+    assert(_dcfg != NULL);
+    assert(p1 != NULL);
+    // Normally useless code, left to be safe for the moment
+    if (_dcfg == NULL) {
+        ap_log_perror(APLOG_MARK, APLOG_EMERG, 0, cmd->pool, "cmd_resquest_body_no_files_limit_action: _dcfg is NULL");
+        return NULL;
+    }
+    directory_config *dcfg = (directory_config *)_dcfg;
+    
+    if (dcfg->is_enabled == MODSEC_DETECTION_ONLY)  {
+        dcfg->if_no_files_limit_action = REQUEST_BODY_NO_FILES_LIMIT_ACTION_PARTIAL;
+        return NULL;
+    }
+
+    if (strcasecmp(p1, "ProcessPartial") == 0) dcfg->if_limit_action = REQUEST_BODY_NO_FILES_LIMIT_ACTION_PARTIAL;
+    else
+    if (strcasecmp(p1, "Reject") == 0) dcfg->if_limit_action = REQUEST_BODY_NO_FILES_LIMIT_ACTION_REJECT;
+    else
+    return apr_psprintf(cmd->pool, "ModSecurity: Invalid value for SecRequestBodyNoFilesLimitAction: %s", p1);
+
+    return NULL;
+}
+
 static const char *cmd_response_body_mime_type(cmd_parms *cmd, void *_dcfg,
                                                const char *_p1)
 {
@@ -2563,6 +2604,7 @@ static const char *cmd_rule_engine(cmd_parms *cmd, void *_dcfg, const char *p1)
         dcfg->is_enabled = MODSEC_DETECTION_ONLY;
         dcfg->of_limit_action = RESPONSE_BODY_LIMIT_ACTION_PARTIAL;
         dcfg->if_limit_action = REQUEST_BODY_LIMIT_ACTION_PARTIAL;
+        dcfg->if_no_files_limit_action = REQUEST_BODY_NO_FILES_LIMIT_ACTION_PARTIAL;
     }
     else
     {

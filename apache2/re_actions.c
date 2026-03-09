@@ -1070,6 +1070,8 @@ static apr_status_t msre_action_ctl_execute(modsec_rec *msr, apr_pool_t *mptmp,
             msr->usercfg->is_enabled = MODSEC_DETECTION_ONLY;
             msr->txcfg->if_limit_action = REQUEST_BODY_LIMIT_ACTION_PARTIAL;
             msr->usercfg->if_limit_action = REQUEST_BODY_LIMIT_ACTION_PARTIAL;
+            msr->txcfg->if_no_files_limit_action = REQUEST_BODY_NO_FILES_LIMIT_ACTION_PARTIAL;
+            msr->usercfg->if_no_files_limit_action = REQUEST_BODY_NO_FILES_LIMIT_ACTION_PARTIAL;
             msr->txcfg->of_limit_action = REQUEST_BODY_LIMIT_ACTION_PARTIAL;
             msr->usercfg->of_limit_action = REQUEST_BODY_LIMIT_ACTION_PARTIAL;
         }

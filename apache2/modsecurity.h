@@ -109,6 +109,9 @@ typedef struct msc_parm msc_parm;
 #define REQUEST_BODY_LIMIT_ACTION_REJECT       0
 #define REQUEST_BODY_LIMIT_ACTION_PARTIAL      1
 
+#define REQUEST_BODY_NO_FILES_LIMIT_ACTION_REJECT       0
+#define REQUEST_BODY_NO_FILES_LIMIT_ACTION_PARTIAL      1
+
 #define SECACTION_TARGETS                       "REMOTE_ADDR"
 #define SECACTION_ARGS                          "@unconditionalMatch"
 
@@ -507,6 +510,7 @@ struct directory_config {
     int                  of_mime_types_cleared;
     int                  of_limit_action;
     int                  if_limit_action;
+    int                  if_no_files_limit_action;
 
     const char          *debuglog_name;
     int                  debuglog_level;
