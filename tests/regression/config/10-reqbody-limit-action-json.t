@@ -325,7 +325,7 @@
 			"Content-Type" => "application/json",
 			"Content-Length" => "16385",
 		],
-		'{"a":"' . '1' x 16362 . '","b":"bad_value"',
+		'{"a":"' . '1' x 16361 . '","b":"bad_value",',
 	),
 },
 {
@@ -355,7 +355,7 @@
 			"Content-Type" => "application/json",
 			"Content-Length" => "16385",
 		],
-		'{"a":"' . '1' x 16362 . '","b":" bad_value',
+		'{"a":"' . '1' x 16361 . '","b":"bad_value "',
 	),
 },
 {
@@ -390,7 +390,7 @@
 },
 {
 	type => "config",
-	comment => "SecRequestBodyLimitAction ProcessPartial (JSON, >NoFilesLimit, pass bad name) should be 200",
+	comment => "SecRequestBodyLimitAction ProcessPartial (JSON, >NoFilesLimit, pass bad name)",
 	conf => qq(
 		SecRuleEngine On
 		SecDebugLog $ENV{DEBUG_LOG}
@@ -407,7 +407,7 @@
 		error => [ qr/Request body no files data length is larger than the configured limit \(16384\)\./, 1 ],
 	},
 	match_response => {
-		status => qr/^403$/,
+		status => qr/^200$/,
 	},
 	request => new HTTP::Request(
 		POST => "http://$ENV{SERVER_NAME}:$ENV{SERVER_PORT}/test.txt",

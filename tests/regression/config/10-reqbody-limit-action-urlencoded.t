@@ -319,7 +319,7 @@
 },
 {
 	type => "config",
-	comment => "SecRequestBodyLimitAction ProcessPartial (urlencoded, >NoFilesLimit, pass bad value) should be 200",
+	comment => "SecRequestBodyLimitAction ProcessPartial (urlencoded, >NoFilesLimit, pass bad value)",
 	conf => qq(
 		SecRuleEngine On
 		SecDebugLog $ENV{DEBUG_LOG}
@@ -335,7 +335,7 @@
 		error => [ qr/Request body no files data length is larger than the configured limit \(16384\)\./, 1 ],
 	},
 	match_response => {
-		status => qr/^403$/,
+		status => qr/^200$/,
 	},
 	request => new HTTP::Request(
 		POST => "http://$ENV{SERVER_NAME}:$ENV{SERVER_PORT}/test.txt",
@@ -377,7 +377,7 @@
 },
 {
 	type => "config",
-	comment => "SecRequestBodyLimitAction ProcessPartial (urlencoded, >NoFilesLimit, deny bad name) should be 200",
+	comment => "SecRequestBodyLimitAction ProcessPartial (urlencoded, >NoFilesLimit, deny bad name)",
 	conf => qq(
 		SecRuleEngine On
 		SecDebugLog $ENV{DEBUG_LOG}
@@ -393,7 +393,7 @@
 		error => [ qr/Request body no files data length is larger than the configured limit \(16384\)\./, 1 ],
 	},
 	match_response => {
-		status => qr/^403$/,
+		status => qr/^200$/,
 	},
 	request => new HTTP::Request(
 		POST => "http://$ENV{SERVER_NAME}:$ENV{SERVER_PORT}/test.txt",
@@ -551,7 +551,7 @@
 },
 {
 	type => "config",
-	comment => "SecRequestBodyLimitAction ProcessPartial (urlencoded, >Limit, >NoFilesLimit)",
+	comment => "SecRequestBodyLimitAction ProcessPartial (urlencoded, >Limit, >NoFilesLimit, no bad)",
 	conf => qq(
 		SecRuleEngine On
 		SecDebugLog $ENV{DEBUG_LOG}

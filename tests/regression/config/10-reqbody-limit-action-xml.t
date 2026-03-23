@@ -261,7 +261,7 @@
 },
 {
 	type => "config",
-	comment => "SecRequestBodyLimitAction ProcessPartial (XML, >NoFilesLimit, pass) should be 200",
+	comment => "SecRequestBodyLimitAction ProcessPartial (XML, >NoFilesLimit, pass)",
 	conf => qq(
 		SecRuleEngine On
 		SecDebugLog $ENV{DEBUG_LOG}
@@ -277,7 +277,7 @@
 		error => [ qr/Request body no files data length is larger than the configured limit \(16384\)\./, 1 ],
 	},
 	match_response => {
-		status => qr/^403$/,
+		status => qr/^200$/,
 	},
 	request => new HTTP::Request(
 		POST => "http://$ENV{SERVER_NAME}:$ENV{SERVER_PORT}/test.txt",
@@ -419,7 +419,7 @@
 		SecRule XML:/* "bad_value" "id:'200002',phase:2,t:none,deny
 	),
 	match_log => {
-		error => [ qr/Request body \(Content-Length\) is larger than the configured limit \(32768\)\./, 1 ],
+		error => [ qr/Request body no files data length is larger than the configured limit \(16384\)\./, 1 ],
 	},
 	match_response => {
 		status => qr/^403$/,
@@ -430,7 +430,7 @@
 			"Content-Type" => "application/xml",
 			"Content-Length" => "32769",
 		],
-		'<root><a>' . '1' x 32750 . 'bad_value ',
+		'<root><a>' . '1' x 16366 . 'bad_value ' . '1' x 16384,
 	),
 },
 {
@@ -448,7 +448,7 @@
 		SecRule XML:/* "bad_value" "id:'200002',phase:2,t:none,deny
 	),
 	match_log => {
-		error => [ qr/Request body \(Content-Length\) is larger than the configured limit \(32768\)\./, 1 ],
+		error => [ qr/Request body no files data length is larger than the configured limit \(16384\)\./, 1 ],
 	},
 	match_response => {
 		status => qr/^200$/,
@@ -459,6 +459,6 @@
 			"Content-Type" => "application/xml",
 			"Content-Length" => "32769",
 		],
-		'<root><a>' . '1' x 32750 . ' bad_value',
+		'<root><a>' . '1' x 16366 . ' bad_value' . '1' x 16384,
 	),
 },
