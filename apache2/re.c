@@ -3071,6 +3071,7 @@ static apr_status_t msre_rule_process_normal(msre_rule *rule, modsec_rec *msr) {
                 }
                 #endif
 
+                msr_log(msr, 4, "[myDebug] calling execute_operator#1");
                 rc = execute_operator(var, rule, msr, acting_actionset, mptmp);
 
                 if (rc < 0) {
@@ -3155,6 +3156,7 @@ static apr_status_t msre_rule_process_normal(msre_rule *rule, modsec_rec *msr) {
                     }
                     #endif
 
+                    msr_log(msr, 4, "[myDebug] calling execute_operator#2");
                     rc = execute_operator(var, rule, msr, acting_actionset, mptmp);
 
                     if (rc < 0) {
@@ -3289,6 +3291,7 @@ static apr_status_t msre_rule_process_normal(msre_rule *rule, modsec_rec *msr) {
             }
             #endif
 
+            msr_log(msr, 4, "[myDebug] calling execute_operator#3");
             rc = execute_operator(var, rule, msr, acting_actionset, mptmp);
 
             if (rc < 0) {

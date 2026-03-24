@@ -381,6 +381,10 @@ int json_process_chunk(modsec_rec *msr, const char *buf, unsigned int size, char
     *error_msg = NULL;
     base_offset=buf;
 
+    if (msr->txcfg->debuglog_level >= 9) {
+        msr_log(msr, 9, "JSON: json_process_chunk size=%" APR_SIZE_T_FMT ".", size);
+    }
+
     /* Feed our parser and catch any errors */
     msr->json->status = yajl_parse(msr->json->handle, buf, size);
     if (msr->json->status != yajl_status_ok) {
@@ -409,6 +413,10 @@ int json_complete(modsec_rec *msr, char **error_msg) {
     assert(error_msg != NULL);
 
     *error_msg = NULL;
+
+    if (msr->txcfg->debuglog_level >= 9) {
+        msr_log(msr, 9, "JSON: json_complete start.");
+    }
 
     /* Wrap up the parsing process */
     msr->json->status = yajl_complete_parse(msr->json->handle);

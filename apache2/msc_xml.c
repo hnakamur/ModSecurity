@@ -61,10 +61,13 @@ static void msc_xml_on_end_elementns(
     const xmlChar* prefix,
     const xmlChar* URI
 ) {
-
     size_t taglen = strlen((const char *)localname);
     modsec_rec * msr = (modsec_rec *)ctx;
     msc_xml_parser_state * xml_parser_state = msr->xml->xml_parser_state;
+
+    if (msr->txcfg->debuglog_level >= 9) {
+        msr_log(msr, 9, "[myDebug] msc_xml_on_end_elementns");
+    }
 
     // if the node is a leaf we add it as argument
     // get the top item from the stack which tells this info
@@ -136,6 +139,10 @@ static void msc_xml_on_characters(void *ctx, const xmlChar *ch, int len) {
     if (xml_parser_state->currval == NULL) {
         msr->xml->xml_error = apr_psprintf(msr->mp, "Failed to allocate memory for XML value.");
         xmlStopParser((xmlParserCtxtPtr)msr->xml->parsing_ctx_arg);
+    }
+    if (msr->txcfg->debuglog_level >= 9 && xml_parser_state->currval != NULL) {
+        msr_log(msr, 9, "[myDebug] msc_xml_on_characters value '%s'",
+                xml_parser_state->currval);
     }
 
 }
@@ -229,6 +236,8 @@ int xml_process_chunk(modsec_rec *msr, const char *buf, unsigned int size, char 
 
         msr_log(msr, 4, "XML: Initialising parser.");
 
+        msr_log(msr, 9, "[myDebug] XML: Initialising parser. parse_xml_into_args=%d", msr->txcfg->parse_xml_into_args);
+
         /* NOTE When Sax interface is used libxml will not
          *      create the document object, but we need it.
 
@@ -264,31 +273,32 @@ int xml_process_chunk(modsec_rec *msr, const char *buf, unsigned int size, char 
 
         /* Not a first invocation. */
         msr_log(msr, 4, "XML: Continue parsing.");
-        if (msr->xml->parsing_ctx != NULL &&
-            msr->txcfg->parse_xml_into_args != MSC_XML_ARGS_ONLYARGS) {
-            xmlParseChunk(msr->xml->parsing_ctx, buf, size, 0);
-            if (!msr->xml->allow_ill_formed && msr->xml->parsing_ctx->wellFormed != 1) {
-                *error_msg = apr_psprintf(msr->mp, "XML: Failed to parse document.");
-                return -1;
-            }
-        }
+    }
 
-        if (msr->xml->parsing_ctx_arg != NULL &&
-            msr->txcfg->parse_xml_into_args != MSC_XML_ARGS_OFF) {
-            if (xmlParseChunk(msr->xml->parsing_ctx_arg, buf, size, 0) != 0) {
-                if (msr->xml->xml_error) {
-                    *error_msg = msr->xml->xml_error;
-                }
-                else {
-                    *error_msg = apr_psprintf(msr->mp, "XML: Failed to parse document for ARGS.");
-                }
-                return -1;
-            }
-        }
-        if (msr->xml->xml_error) {
-            *error_msg = msr->xml->xml_error;
+    if (msr->xml->parsing_ctx != NULL &&
+        msr->txcfg->parse_xml_into_args != MSC_XML_ARGS_ONLYARGS) {
+        xmlParseChunk(msr->xml->parsing_ctx, buf, size, 0);
+        if (!msr->xml->allow_ill_formed && msr->xml->parsing_ctx->wellFormed != 1) {
+            *error_msg = apr_psprintf(msr->mp, "XML: Failed to parse document.");
             return -1;
         }
+    }
+
+    if (msr->xml->parsing_ctx_arg != NULL &&
+        msr->txcfg->parse_xml_into_args != MSC_XML_ARGS_OFF) {
+        if (xmlParseChunk(msr->xml->parsing_ctx_arg, buf, size, 0) != 0) {
+            if (msr->xml->xml_error) {
+                *error_msg = msr->xml->xml_error;
+            }
+            else {
+                *error_msg = apr_psprintf(msr->mp, "XML: Failed to parse document for ARGS.");
+            }
+            return -1;
+        }
+    }
+    if (msr->xml->xml_error) {
+        *error_msg = msr->xml->xml_error;
+        return -1;
     }
 
     return 1;
@@ -301,6 +311,8 @@ int xml_complete(modsec_rec *msr, char **error_msg) {
     assert(msr != NULL);
     assert(error_msg != NULL);
     *error_msg = NULL;
+
+    msr_log(msr, 9, "[myDebug] xml_complete msr->xml->parsing_ctx=%lx, msr->xml->parsing_ctx_arg=%lx", (uintptr_t)msr->xml->parsing_ctx, (uintptr_t)msr->xml->parsing_ctx_arg);
 
     /* Only if we have a context, meaning we've done some work. */
     if (msr->xml->parsing_ctx != NULL || msr->xml->parsing_ctx_arg != NULL) {

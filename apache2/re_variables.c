@@ -759,6 +759,7 @@ static int var_xml_generate(modsec_rec *msr, msre_var *var, msre_rule *rule,
         xmlXPathFreeContext(xpathCtx);
         return 0;
     }
+    msr_log(msr, 9, "[myDebug] XML: nodeNr=%d", nodes->nodeNr);
 
     /* Create one variable for each node in the result. */
     char* content = NULL;
@@ -767,6 +768,8 @@ static int var_xml_generate(modsec_rec *msr, msre_var *var, msre_rule *rule,
 
         content = (char *)xmlNodeGetContent(nodes->nodeTab[i]);
         if (content != NULL) {
+            msr_log(msr, 9, "[myDebug] XML: i=%d, content='%s'", i, content);
+
             rvar = apr_pmemdup(mptmp, var, sizeof(msre_var));
             if (!rvar) {
                 msr_log(msr, 1, "XML: Memory allocation error");
