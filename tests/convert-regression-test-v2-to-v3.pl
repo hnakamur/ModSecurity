@@ -39,15 +39,14 @@ my %FILE = ();
 $SIG{TERM} = $SIG{INT} = \&handle_interrupt;
 
 my %opt;
-getopts('O:h', \%opt);
+getopts('h', \%opt);
 
 sub usage {
     print stderr <<"EOT";
 @_
-Usage: $SCRIPT [options] [file [N]]
+Usage: $SCRIPT file
 
  Options:
-  -O dir    Specify output directory.
   -h        This help.
 
 EOT
@@ -57,59 +56,13 @@ EOT
 
 usage() if ($opt{h});
 
-### Defaults
-$opt{O} = "." unless (defined $opt{O});
-
-
-%ENV = (
-    %ENV,
-    SERVER_ROOT => $opt{S},
-    SERVER_PORT => $opt{p},
-    SERVER_NAME => "localhost",
-    TEST_SERVER_ROOT => $SROOT_DIR,
-    DATA_DIR => $DATA_DIR,
-    TEMP_DIR => $TEMP_DIR,
-    UPLOAD_DIR => $UPLOAD_DIR,
-    CONF_DIR => $CONF_DIR,
-    MODULES_DIR => $MODULES_DIR,
-    LOGS_DIR => $FILES_DIR,
-    SCRIPT_DIR => $SCRIPT_DIR,
-    REGRESSION_DIR => $REG_DIR,
-    DIST_ROOT => File::Spec->rel2abs(dirname("$SCRIPT_DIR/../..")),
-    AUDIT_LOG => $opt{A},
-    DEBUG_LOG => $opt{D},
-    ERROR_LOG => $opt{E},
-    HTTPD_CONF => $opt{C},
-    HTDOCS => $opt{H},
-    RUNASUSER => $ENV{USER} || $ENV{LOGNAME} || $ENV{USERNAME} || 'unknown',
-);
-
 #dbg("OPTIONS: ", \%opt);
 
-if (defined $ARGV[0]) {
-    convertfile(dirname($ARGV[0]), basename($ARGV[0]), $ARGV[1]);
-}
+convertfile($ARGV[0]);
 exit 0;
-
-for my $type (@TYPES) {
-    my $dir = "$SCRIPT_DIR/regression/$type";
-    my @cfg = ();
-
-    # Get test names
-    opendir(DIR, "$dir") or quit(1, "Failed to open \"$dir\": $!");
-    @cfg = grep { /\.t$/ && -f "$dir/$_" } readdir(DIR);
-    closedir(DIR);
-
-    for my $cfg (sort @cfg) {
-        convertfile($dir, $cfg);
-    }
-}
-exit 0;
-
 
 sub convertfile {
-    my($dir, $cfg) = @_;
-    my $fn = "$dir/$cfg";
+    my($fn) = @_;
     my @data = ();
     my $edata;
     my @C = ();
@@ -121,7 +74,7 @@ sub convertfile {
   
     $edata = q/@C = (/ . join("", @data) . q/)/;
     eval $edata;
-    quit(1, "Failed to read test data \"$cfg\": $@") if ($@);
+    quit(1, "Failed to read test data \"$fn\": $@") if ($@);
 
     unless (@C) {
         print STDERR "\nNo tests defined for $fn";
@@ -188,11 +141,10 @@ sub convert_conf_to_rules {
     my ($c) = @_;
 
     $c =~ s/^[\n\t]+|[\n\t]+$//g;
-    return [
-        map {
-            s/^[\n\t]+|[\n\t]+$//gr
-        } split /\n/, $c
-    ];
+    my @rules = map {
+        s/^[\n\t]+|[\n\t]+$//gr
+    } split /\n/, $c;
+    return [ grep {!/^SecDebugLog/} @rules ];
 }
 
 sub convert_request_to_json {
