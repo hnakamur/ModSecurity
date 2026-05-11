@@ -106,6 +106,19 @@ sub convertfile {
             headers => \%response_headers,
             body => \@response_body,
         );
+
+
+        tie my %expected, 'Hash::Ordered';
+        my $error_re = get_match_log_pattern(\%t, 'error');
+        if (defined $error_re) {
+            $expected{error_log} = $error_re;
+        }
+        my $debug_re = get_match_log_pattern(\%t, 'debug');
+        if (defined $debug_re) {
+            $expected{debug_log} = $debug_re;
+        }
+        my $status = get_match_response_status(\%t);
+        $expected{http_code} = $status;
         tie my %t_json_obj, 'Hash::Ordered', (
             enabled => 1,
             version_min => 300000,
@@ -115,21 +128,9 @@ sub convertfile {
             server => \%server_obj,
             request => convert_request_to_json($t{request}),
             response => \%response,
+            expected => \%expected,
             rules => convert_conf_to_rules($t{conf}),
         );
-
-        my $error_re = get_match_log_pattern(\%t, 'error');
-        my $debug_re = get_match_log_pattern(\%t, 'debug');
-        if (defined $error_re || defined $debug_re) {
-            tie my %match_log, 'Hash::Ordered';
-            if (defined $error_re) {
-                $match_log{error} = $error_re;
-            }
-            if (defined $debug_re) {
-                $match_log{debug} = $debug_re;
-            }
-            $t_json_obj{match_log} = \%match_log;
-        }
 
         push(@json_tests, \%t_json_obj);
     }
@@ -186,6 +187,23 @@ sub convert_request_to_json {
         body => \@body,
     );
     return \%request;
+}
+
+sub get_match_response_status {
+    my ($data) = @_;
+
+    return undef unless ref $data eq 'HASH';
+
+    my $mr = $data->{match_response};
+    return undef unless ref $mr eq 'HASH';
+
+    my $re = $mr->{status};
+    return undef unless ref $re eq 'Regexp';
+
+    my $str = "$re";  # qr/^200$/
+    return int($1) if $str =~ m{^\(\?\^:\^(.*)\$\)$};
+
+    return undef;
 }
 
 sub get_match_log_pattern {
