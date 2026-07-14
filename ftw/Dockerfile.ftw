@@ -1,7 +1,7 @@
 # Copyright 2022 The OWASP Coraza contributors
 # SPDX-License-Identifier: Apache-2.0
 
-FROM ghcr.io/coreruleset/go-ftw:1.3.0
+FROM ghcr.io/coreruleset/go-ftw:2.4.0
 
 RUN apk update && apk add curl
 
@@ -10,7 +10,7 @@ WORKDIR /workspace
 # TODOs: 
 # - update when new CRS version is tagged: E.g. https://github.com/coreruleset/coreruleset/archive/refs/tags/v4.5.0.tar.gz
 # - keep it aligned with the github.com/corazawaf/coraza-coreruleset/v4 dependency version used
-ARG CRS_VERSION=v4.21.0
+ARG CRS_VERSION=v4.25.1
 
 ADD https://github.com/coreruleset/coreruleset/archive/refs/tags/${CRS_VERSION}.tar.gz /workspace/coreruleset/
 

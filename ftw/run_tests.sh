@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu
 
-CRS_VERSION=${CRS_VERSION:-v4.21.0}
+CRS_VERSION=${CRS_VERSION:-v4.25.1}
 
 if [ $# -ne 1 -o "$1" = "-h" -o "$1" = "--help" ]; then
   >&2 cat <<EOF

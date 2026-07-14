@@ -10,14 +10,14 @@ services:
   crs-apache:
     depends_on:
       - backend
-    image: owasp/modsecurity-crs:apache
+    image: owasp/modsecurity-crs:4.25.1-apache-lts
     ports:
       - "8080:8080"
     environment:
       SERVERNAME: localhost
       BACKEND: http://backend:8081
       APACHE_LOGFORMAT: 'time:%{end:%y-%m-%dT%H:%M:%S}t.%{msec_frac}t%{%z}t\treq:%r\tstatus:%>s\treq_time_us:%D\tuser_agent:%{User-agent}i\tx_crs_test:%{X-CRS-Test}i'
-      MODSEC_DEBUG_LOGLEVEL: 0
+      MODSEC_DEBUG_LOGLEVEL: 3
       MODSEC_DEBUG_LOG: /var/log/apache2/modsec_debug.log
       MODSEC_AUDIT_LOG: /var/log/apache2/modsec_audit.log
       # CRS Variables for testing using ftw
