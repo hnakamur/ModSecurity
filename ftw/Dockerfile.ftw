@@ -10,7 +10,7 @@ WORKDIR /workspace
 # TODOs:
 # - update when new CRS version is tagged: E.g. https://github.com/coreruleset/coreruleset/archive/refs/tags/v4.5.0.tar.gz
 # - keep it aligned with the github.com/corazawaf/coraza-coreruleset/v4 dependency version used
-ARG CRS_VERSION=v4.25.1
+ARG CRS_VERSION=v4.28.0
 
 ADD https://github.com/coreruleset/coreruleset/archive/refs/tags/${CRS_VERSION}.tar.gz /workspace/coreruleset/
 
