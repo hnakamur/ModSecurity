@@ -24,13 +24,11 @@ ARG NGINX_DEB_VERSION_URL_ENCODED=1.30.4%2Bmod.1-1hn1ubuntu22.04
 RUN set -eux; \
     apt-get update; \
     # gettext-base is needed for envsubst command.
-    # ed is needed by /docker-entrypoint.d/95-configure-rules.sh.
     DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends \
         ca-certificates \
         curl \
         gnupg \
-        gettext-base \
-        ed; \
+        gettext-base; \
     mkdir /tmp/deb; \
     curl -sSL https://github.com/hnakamur/openresty-luajit-deb-docker/releases/download/${LUAJIT_DEB_VERSION}/openresty-luajit-${LUAJIT_DEB_VERSION}.tar.gz \
         | tar zx --strip-components=2 -C /tmp/deb; \
@@ -54,19 +52,16 @@ COPY --from=base_modsecurity /docker-entrypoint.d/ /docker-entrypoint.d/
 COPY --from=base_modsecurity /usr/local/bin/check-low-port /usr/local/bin/generate-certificate /usr/local/bin/healthcheck /usr/local/bin/
 
 RUN set -eux; \
-    mkdir -p /opt/owasp-crs /etc/modsecurity.d /etc/nginx/ssl \
-         /etc/nginx/conf /etc/ssl/certs /var/log/modsecurity/audit /var/cache/nginx; \
+    mkdir /opt/owasp-crs /etc/modsecurity.d /etc/nginx/ssl; \
+    chown nginx:nginx /opt/owasp-crs; \
     curl -sSL https://raw.githubusercontent.com/owasp-modsecurity/ModSecurity/v3/master/unicode.mapping \
          -o /etc/modsecurity.d/unicode.mapping; \
-    curl -sSL https://ssl-config.mozilla.org/ffdhe2048.txt -o /etc/ssl/certs/dhparam-2048.pem; \
     # Comment out the SecDisableBackendCompression option since it is not supported in V3
     sed -i 's/^\(SecDisableBackendCompression .*\)/# \1/' /etc/nginx/templates/modsecurity.d/modsecurity-override.conf.template; \
     ln -sv /opt/owasp-crs /etc/modsecurity.d/; \
-    chown -R nginx:nginx \
-        /etc/nginx \
-        /etc/ssl/certs \
-        /var/log/modsecurity \
-        /var/cache/nginx \
+    mkdir -p /var/log/modsecurity/audit; \
+    chown nginx:nginx \
+        /var/log/modsecurity/audit \
         /opt/owasp-crs \
         /etc/modsecurity.d
 
@@ -81,6 +76,7 @@ RUN set -eux; \
     export GNUPGHOME=$(mktemp -d); \
     gpg --fetch-key https://coreruleset.org/security.asc; \
     gpg --verify coreruleset-${CRS_RELEASE}-minimal.tar.gz.asc v${CRS_RELEASE}-minimal.tar.gz; \
+    rm -r ${GNUPGHOME}; \
     tar -zxf v${CRS_RELEASE}-minimal.tar.gz --strip-components=1 -C /opt/owasp-crs; \
     rm -f v${CRS_RELEASE}-minimal.tar.gz coreruleset-${CRS_RELEASE}-minimal.tar.gz.asc; \
     mv -v /opt/owasp-crs/crs-setup.conf.example /opt/owasp-crs/crs-setup.conf; \
@@ -185,8 +181,6 @@ ENV \
     BLOCKING_PARANOIA=1
 
 HEALTHCHECK CMD /usr/local/bin/healthcheck
-
-COPY 92-single_worker_process.sh /docker-entrypoint.d/
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
