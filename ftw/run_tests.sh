@@ -30,7 +30,9 @@ log_dest_dir="$1"
 
 export COMPOSE_PROGRESS=plain
 
-docker compose build --pull --no-cache --build-arg CRS_VERSION=$CRS_VERSION
+if [ "${SKIP_BUILD:-0}" -ne 1 ]; then
+  docker compose build --pull --no-cache --build-arg CRS_VERSION=$CRS_VERSION
+fi
 
 mkdir -p "$log_dest_dir"
 docker compose run --rm ftw 2>&1 | tee "$log_dest_dir/run-ftw.log"
