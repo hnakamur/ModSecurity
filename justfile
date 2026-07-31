@@ -1,11 +1,11 @@
 ftw case:
-  (cd ftw; FTW_INCLUDE='^{{case}}$' SKIP_BUILD=1 ./run_tests.sh {{case}})
+  FTW_INCLUDE='^{{case}}$' SKIP_BUILD=1 ./ftw/run.sh log-{{case}})
 
 ftw_debug case:
-  (cd ftw; FTW_DEBUG=1 FTW_INCLUDE='^{{case}}$' SKIP_BUILD=1 ./run_tests.sh {{case}})
+  FTW_DEBUG=1 FTW_INCLUDE='^{{case}}$' SKIP_BUILD=1 ./ftw/run.sh log-{{case}}
 
 ftw_all:
-  (cd ftw; ./run_tests.sh .)
+  ./ftw/run.sh
 
 build:
   ./build.sh
