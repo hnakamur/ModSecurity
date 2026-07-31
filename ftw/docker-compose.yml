@@ -10,7 +10,9 @@ services:
   crs-nginx:
     depends_on:
       - backend
-    image: owasp/modsecurity-crs:4-nginx-202607160307
+    build:
+      context: .
+      dockerfile: ./Dockerfile.crs-nginx
     ports:
       - "8080:8080"
     environment:
