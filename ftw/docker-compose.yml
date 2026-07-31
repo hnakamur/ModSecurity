@@ -39,15 +39,10 @@ services:
       MAX_FILE_SIZE: 64100
       COMBINED_FILE_SIZES: 65535
       CRS_ENABLE_TEST_MARKER: 1
+    # make owner of log files to be the host user
+    user: ":"
     volumes:
-      # Volumes for sharing ModSecurity log files to ftw
-      - modsec_log:/var/log/modsecurity/audit:rw
-      # - type: bind
-      #   source: ./my_logs/access.log
-      #   target: /var/log/nginx/access.log
-      # - type: bind
-      #   source: ./my_logs/error.log
-      #   target: /var/log/nginx/error.log
+      - ./log:/var/log/modsecurity/audit:rw
 
   ftw:
     depends_on:
@@ -60,6 +55,4 @@ services:
       - FTW_INCLUDE
       - FTW_DEBUG
     volumes:
-      - modsec_log:/var/log/modsecurity/audit:ro
-volumes:
-  modsec_log:
+      - ./log:/var/log/modsecurity/audit:ro
