@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -eu -o pipefail
 
 CRS_VERSION=${CRS_VERSION:-v4.28.0}
@@ -52,7 +52,7 @@ main() {
   rm -f "${log_dir}"/*
 
   docker compose up --abort-on-container-exit 2>&1 \
-    | sed -n '/^ftw-1[^|]*|/{s/^ftw-1[^|]*|//;p}' | tee "${log_dir}/run-ftw.log"
+    | sed -n -u '/^ftw-[0-9][0-9]*[^|]*|/{s/^ftw-[0-9][0-9]*[^|]*|//;p}' | tee "${log_dir}/run-ftw.log"
 }
 
 main "$@"

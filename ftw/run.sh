@@ -1,7 +1,7 @@
 #!/bin/bash
 set -eu -o pipefail
 
-CRS_VERSION=${CRS_VERSION:-v4.28.0}
+CRS_VERSION="${CRS_VERSION:-v4.28.0}"
 
 show_usage_and_exit() {
   >&2 cat <<EOF
@@ -20,8 +20,8 @@ FTW_INCLUDE   Specify a regular expression to run only specified test cases.
 Runs all tests:
   $0
 
-Runs only tests whose ID begins with 980170 and enable debug log:
-  FTW_DEBUG=1 FTW_INCLUDE=^980170 $0 log
+Runs only tests whose ID begins with 980170-1 and enable debug log:
+  FTW_DEBUG=1 FTW_INCLUDE='^980170-1$' $0
 EOF
   exit 2
 }
@@ -52,7 +52,7 @@ main() {
   rm -f "${log_dir}"/*
 
   docker compose up --abort-on-container-exit 2>&1 \
-    | sed -n '/^ftw-1[^|]*|/{s/^ftw-1[^|]*|//;p}' | tee "${log_dir}/run-ftw.log"
+    | sed -n -u '/^ftw-[0-9][0-9]*[^|]*|/{s/^ftw-[0-9][0-9]*[^|]*|//;p}' | tee "${log_dir}/run-ftw.log"
 }
 
 main "$@"
