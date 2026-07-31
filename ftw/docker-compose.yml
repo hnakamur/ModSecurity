@@ -19,7 +19,7 @@ services:
       ACCESSLOG: /var/log/modsecurity/audit/access.log
       ERRORLOG: /var/log/modsecurity/audit/error.log
       LOGLEVEL: debug
-      MODSEC_DEBUG_LOGLEVEL: 0
+      MODSEC_DEBUG_LOGLEVEL: "${MODSEC_DEBUG_LOGLEVEL:-0}"
       MODSEC_DEBUG_LOG: /var/log/modsecurity/audit/debug.log
       MODSEC_AUDIT_LOG: /var/log/modsecurity/audit/audit.log
       MODSEC_AUDIT_STORAGE_DIR: /var/log/modsecurity/audit/
