@@ -54,5 +54,6 @@ services:
       - FTW_CLOUDMODE
       - FTW_INCLUDE
       - FTW_DEBUG
+      - FTW_TRACE
     volumes:
       - ./log:/var/log/modsecurity/audit:ro
