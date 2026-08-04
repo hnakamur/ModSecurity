@@ -6,16 +6,45 @@ services:
       - ftw
     image: utils/tcpdump
     network_mode: service:backend
+    entrypoint:
+      - tcpdump
+      - -i
+      - any
+      - -U
+      - -w
+      - /home/backend.pcap
+      - 'tcp port (8080 or 8081)'
+    volumes:
+      - ./log:/home:rw
 
   capture-crs-apache:
     depends_on:
       - ftw
     image: utils/tcpdump
     network_mode: service:crs-apache
+    entrypoint:
+      - tcpdump
+      - -i
+      - any
+      - -U
+      - -w
+      - /home/crs-apache.pcap
+      - 'tcp port (8080 or 8081)'
+    volumes:
+      - ./log:/home:rw
 
   capture-ftw:
     depends_on:
       - ftw
     image: utils/tcpdump
     network_mode: service:ftw
-  
+    entrypoint:
+      - tcpdump
+      - -i
+      - any
+      - -U
+      - -w
+      - /home/ftw.pcap
+      - 'tcp port 8080'
+    volumes:
+      - ./log:/home:rw

@@ -10,16 +10,20 @@ services:
   crs-apache:
     depends_on:
       - backend
-    image: owasp/modsecurity-crs:4.25.1-apache-lts
+    image: ghcr.io/coreruleset/modsecurity-crs:4.28.0-apache-202607160307
     ports:
       - "8080:8080"
     environment:
       SERVERNAME: localhost
       BACKEND: http://backend:8081
-      APACHE_LOGFORMAT: 'time:%{end:%y-%m-%dT%H:%M:%S}t.%{msec_frac}t%{%z}t\treq:%r\tstatus:%>s\treq_time_us:%D\tuser_agent:%{User-agent}i\tx_crs_test:%{X-CRS-Test}i'
-      MODSEC_DEBUG_LOGLEVEL: 3
-      MODSEC_DEBUG_LOG: /var/log/apache2/modsec_debug.log
-      MODSEC_AUDIT_LOG: /var/log/apache2/modsec_audit.log
+      ACCESSLOG: /var/log/modsecurity/audit/access.log
+      ERRORLOG: /var/log/modsecurity/audit/error.log
+      LOGLEVEL: debug
+      MODSEC_DEBUG_LOGLEVEL: "${MODSEC_DEBUG_LOGLEVEL:-0}"
+      MODSEC_DEBUG_LOG: /var/log/modsecurity/audit/debug.log
+      MODSEC_AUDIT_LOG: /var/log/modsecurity/audit/audit.log
+      MODSEC_AUDIT_STORAGE_DIR: /var/log/modsecurity/audit/
+      MODSEC_AUDIT_LOG_FORMAT: JSON
       # CRS Variables for testing using ftw
       MODSEC_RULE_ENGINE: DetectionOnly
       PARANOIA: 4
@@ -35,9 +39,10 @@ services:
       MAX_FILE_SIZE: 64100
       COMBINED_FILE_SIZES: 65535
       CRS_ENABLE_TEST_MARKER: 1
+    # make owner of log files to be the host user
+    user: ":"
     volumes:
-      # Volumes for sharing ModSecurity log files to ftw
-      - apache2_log:/var/log/apache2:rw
+      - ./log:/var/log/modsecurity/audit:rw
 
   ftw:
     depends_on:
@@ -49,7 +54,6 @@ services:
       - FTW_CLOUDMODE
       - FTW_INCLUDE
       - FTW_DEBUG
+      - FTW_TRACE
     volumes:
-      - apache2_log:/var/log/apache2:ro
-volumes:
-  apache2_log:
+      - ./log:/var/log/modsecurity/audit:ro

@@ -1,5 +1,5 @@
 ---
-logfile: '/var/log/apache2/modsec_audit.log'
+logfile: '/var/log/modsecurity/audit/audit.log'
 maxmarkerretries: 10
 testoverride:
   input:
