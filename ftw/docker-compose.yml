@@ -10,7 +10,7 @@ services:
   crs-apache:
     depends_on:
       - backend
-    image: ghcr.io/coreruleset/modsecurity-crs:4.28.0-apache-202607160307
+    image: owasp/modsecurity-crs:4.28.0-apache-202608040408
     ports:
       - "8080:8080"
     environment:
