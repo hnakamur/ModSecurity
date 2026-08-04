@@ -13,7 +13,7 @@ build-docker-compose:
 build:
   ./build.sh
   ./configure --enable-parser-generation
-  make -j
+  bear -- make -j
 
 build-ftw:
   go build -C ../../coreruleset/go-ftw -trimpath -tags netgo,osusergo -o "${PWD}/ftw/go-ftw"
