@@ -4,8 +4,8 @@ ftw case:
 ftw-debug case:
   FTW_DEBUG=1 FTW_INCLUDE='^{{case}}$' SKIP_BUILD=1 ./ftw/run.sh log-{{case}}
 
-ftw-all:
-  ./ftw/run.sh
+ftw-all *args:
+  ./ftw/run.sh {{args}}
 
 build-docker-compose:
   (cd ftw; docker compose build --no-cache --pull --build-arg CRS_VERSION=v4.25.0)
