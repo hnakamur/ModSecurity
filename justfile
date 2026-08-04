@@ -1,16 +1,19 @@
 ftw case:
   FTW_INCLUDE='^{{case}}$' SKIP_BUILD=1 ./ftw/run.sh log-{{case}})
 
-ftw_debug case:
+ftw-debug case:
   FTW_DEBUG=1 FTW_INCLUDE='^{{case}}$' SKIP_BUILD=1 ./ftw/run.sh log-{{case}}
 
-ftw_all:
+ftw-all:
   ./ftw/run.sh
+
+build-docker-compose:
+  (cd ftw; docker compose build --no-cache --pull --build-arg CRS_VERSION=v4.25.0)
 
 build:
   ./build.sh
   ./configure --enable-parser-generation
   make -j
 
-build_ftw:
+build-ftw:
   go build -C ../../coreruleset/go-ftw -trimpath -tags netgo,osusergo -o "${PWD}/ftw/go-ftw"
