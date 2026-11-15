@@ -1,0 +1,138 @@
+[
+  {
+    "enabled": 1,
+    "version_min": 300000,
+    "version_max": 0,
+    "title": "Action tag - a multiMatch rule expands its tag for every match",
+    "client": {
+      "ip": "200.249.12.31",
+      "port": 2313
+    },
+    "server": {
+      "ip": "200.249.12.31",
+      "port": 80
+    },
+    "request": {
+      "headers": {
+        "Host": "www.modsecurity.org",
+        "User-Agent": "Mozilla/5.0",
+        "Content-Length": "0"
+      },
+      "uri": "/?a=attackone&b=attacktwo",
+      "method": "GET",
+      "http_version": 1.1,
+      "body": [
+        ""
+      ]
+    },
+    "response": {
+      "headers": {
+        "Content-Length": "0"
+      },
+      "body": [
+        ""
+      ]
+    },
+    "expected": {
+      "http_code": 200,
+      "error_log": "\\[tag \"tag-ARGS:a\"\\][\\s\\S]*\\[tag \"tag-ARGS:b\"\\]"
+    },
+    "rules": [
+      "SecRuleEngine On",
+      "SecRule ARGS \"@beginsWith attack\" \"id:3204,phase:1,pass,log,multiMatch,msg:'every target',tag:'tag-%{MATCHED_VAR_NAME}'\""
+    ]
+  },
+  {
+    "enabled": 1,
+    "version_min": 300000,
+    "version_max": 0,
+    "title": "Action tag - a multiMatch rule expands its tag for every match in the audit log",
+    "client": {
+      "ip": "200.249.12.31",
+      "port": 2313
+    },
+    "server": {
+      "ip": "200.249.12.31",
+      "port": 80
+    },
+    "request": {
+      "headers": {
+        "Host": "www.modsecurity.org",
+        "User-Agent": "Mozilla/5.0",
+        "Content-Length": "0"
+      },
+      "uri": "/?a=attackone&b=attacktwo",
+      "method": "GET",
+      "http_version": 1.1,
+      "body": [
+        ""
+      ]
+    },
+    "response": {
+      "headers": {
+        "Content-Length": "0"
+      },
+      "body": [
+        ""
+      ]
+    },
+    "expected": {
+      "http_code": 200,
+      "audit_log": "\"tags\":\\[\"tag-ARGS:a\"\\][\\s\\S]*\"tags\":\\[\"tag-ARGS:b\"\\]"
+    },
+    "rules": [
+      "SecRuleEngine On",
+      "SecRule ARGS \"@beginsWith attack\" \"id:3204,phase:1,pass,log,auditlog,multiMatch,msg:'every target',tag:'tag-%{MATCHED_VAR_NAME}'\"",
+      "SecAuditEngine On",
+      "SecAuditLogParts ABCFHZ",
+      "SecAuditLogFormat JSON",
+      "SecAuditLog /tmp/test/modsec_audit_action_tag_per_match_2.log",
+      "SecAuditLogDirMode 0766",
+      "SecAuditLogFileMode 0666",
+      "SecAuditLogType Serial"
+    ]
+  },
+  {
+    "enabled": 1,
+    "version_min": 300000,
+    "version_max": 0,
+    "title": "Action tag - a rule expands its tag for every target it matches",
+    "client": {
+      "ip": "200.249.12.31",
+      "port": 2313
+    },
+    "server": {
+      "ip": "200.249.12.31",
+      "port": 80
+    },
+    "request": {
+      "headers": {
+        "Host": "www.modsecurity.org",
+        "User-Agent": "Mozilla/5.0",
+        "Content-Length": "0"
+      },
+      "uri": "/?a=attackone&b=attacktwo",
+      "method": "GET",
+      "http_version": 1.1,
+      "body": [
+        ""
+      ]
+    },
+    "response": {
+      "headers": {
+        "Content-Length": "0"
+      },
+      "body": [
+        ""
+      ]
+    },
+    "expected": {
+      "http_code": 200,
+      "error_log": "\\[tag \"tag-ARGS:a\"\\][\\s\\S]*\\[tag \"tag-ARGS:b\"\\]"
+    },
+    "rules": [
+      "SecRuleEngine On",
+      "SecRule ARGS \"@beginsWith attack\" \"id:3204,phase:1,pass,log,msg:'every target',tag:'tag-%{MATCHED_VAR_NAME}'\""
+    ]
+  }
+]
